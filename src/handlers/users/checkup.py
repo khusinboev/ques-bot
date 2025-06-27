@@ -198,7 +198,7 @@ async def stop_quiz(callback: CallbackQuery, state: FSMContext):
             number = sql.fetchone()
             await callback.message.answer("Botimizga xush kelibsiz", reply_markup=ReplyKeyboardRemove())
             await callback.message.answer(
-                f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> havola92939449\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\nSiz {number} ta odam taklif qildingiz, yana {3 - number}ta odam taklif qilishingiz kerak",
+                f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \n<code>https://t.me/BMB_testbot?start={user_id}</code>\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\nSiz {number} ta odam taklif qildingiz, yana {3 - number}ta odam taklif qilishingiz kerak",
                 parse_mode="html",
                 reply_markup=await CheckData.share_link(user_id))
         elif chance is False:

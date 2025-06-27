@@ -11,10 +11,9 @@ class CheckData:
     @staticmethod
     async def share_link(user_id):
         ref_link = f"https://t.me/BMB_testbot?start={user_id}"
-        share_link = f"https://t.me/share/url?url={ref_link}&text=Salom! Men senga ajoyib test bot tavsiya qilaman 👇"
+        share_link = f"https://t.me/share/url?text=Salom! Men senga ajoyib test bot tavsiya qilaman&url={ref_link}"
 
         kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔗 Referal havolangiz", url=ref_link)],
             [InlineKeyboardButton(text="📤 Do‘stlarga ulashish", url=share_link)]
         ])
 
