@@ -1,4 +1,5 @@
 import os
+import time
 
 from aiogram import Router, F
 from aiogram.enums import ChatType
@@ -201,6 +202,7 @@ async def start_cmd1(message: Message):
             conn.commit()
             await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.{nn}")
             await sent_photo.delete()
+            time.sleep(0.1)
 
     else:
         await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
