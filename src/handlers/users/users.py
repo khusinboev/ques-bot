@@ -86,7 +86,8 @@ async def start_with_ref(message: Message, command: CommandObject):
                 )
                 conn.commit()
 
-                number = cursor.execute("SELECT member FROM referal WHERE user_id = %s", (referal_id,))
+                cursor.execute("SELECT member FROM referal WHERE user_id = %s", (referal_id,))
+                number = cursor.fetchone()[0]
                 if number>=3:
                     cursor.execute(
                         "UPDATE referal SET ready=TRUE WHERE user_id = %s", (referal_id,)
