@@ -17,7 +17,7 @@ user_router = Router()
 @user_router.message(CommandStart())
 async def start_cmd1(message: Message):
     user_id = message.from_user.id
-    is_start = cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,)).fetchone()
+    is_start = (cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))).fetchone()
     if is_start:
         cursor.execute(
             "UPDATE referal SET starter = TRUE WHERE user_id = %s", (user_id,)
@@ -77,7 +77,7 @@ async def start_with_ref(message: Message, command: CommandObject):
         # Baza orqali tekshirib, yozamiz
         cursor.execute("SELECT 1 FROM referal WHERE user_id = %s", (user_id,))
         if cursor.fetchone():
-            is_start = cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,)).fetchone()
+            is_start = (cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))).fetchone()
             if is_start:
                 cursor.execute(
                     "UPDATE referal SET member = member + 1 WHERE user_id = %s", (referal_id,)
@@ -85,7 +85,7 @@ async def start_with_ref(message: Message, command: CommandObject):
                 conn.commit()
 
                 number = cursor.execute("SELECT member FROM referal WHERE user_id = %s", (referal_id,))
-                if number>=5:
+                if number>=3:
                     cursor.execute(
                         "UPDATE referal SET ready=TRUE WHERE user_id = %s", (referal_id,)
                     )
