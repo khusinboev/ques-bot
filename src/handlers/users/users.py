@@ -167,42 +167,42 @@ async def start_with_ref(message: Message, command: CommandObject):
             await message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
 
 
-@user_router.message(F.text == "kepataqoy")
-async def start_cmd1(message: Message):
-    user_id = message.from_user.id
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-
-    table_names = ["history", "literature", "math"]
-    nn = 0
-    for table in table_names:
-        nn+=1
-        cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL")
-        result = cursor.fetchall()
-
-        for row in result:
-
-            row_id, photo_path = row
-            full_path = os.path.join(current_dir, photo_path)
-
-            if not os.path.exists(full_path):
-                await message.answer(f"❌ Fayl topilmadi: {full_path}")
-                continue
-
-            with open(full_path, 'rb') as photo_file:
-                photo_bytes = photo_file.read()
-
-            telegram_file = BufferedInputFile(photo_bytes, filename=os.path.basename(full_path))
-            sent_photo = await message.answer_photo(photo=telegram_file)
-
-            # file_id ni olish
-            file_id = sent_photo.photo[-1].file_id
-
-            # file_id ni jadvalga yangilash
-            cursor.execute(f"UPDATE {table} SET file_id = %s WHERE id = %s", (file_id, row_id))
-            conn.commit()
-            await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.{nn}")
-            await sent_photo.delete()
-            time.sleep(0.1)
-
-    else:
-        await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
+# @user_router.message(F.text == "kepataqoy")
+# async def start_cmd1(message: Message):
+#     user_id = message.from_user.id
+#     current_dir = os.path.dirname(os.path.abspath(__file__))
+#
+#     table_names = ["history", "literature", "math"]
+#     nn = 0
+#     for table in table_names:
+#         nn+=1
+#         cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL")
+#         result = cursor.fetchall()
+#
+#         for row in result:
+#
+#             row_id, photo_path = row
+#             full_path = os.path.join(current_dir, photo_path)
+#
+#             if not os.path.exists(full_path):
+#                 await message.answer(f"❌ Fayl topilmadi: {full_path}")
+#                 continue
+#
+#             with open(full_path, 'rb') as photo_file:
+#                 photo_bytes = photo_file.read()
+#
+#             telegram_file = BufferedInputFile(photo_bytes, filename=os.path.basename(full_path))
+#             sent_photo = await message.answer_photo(photo=telegram_file)
+#
+#             # file_id ni olish
+#             file_id = sent_photo.photo[-1].file_id
+#
+#             # file_id ni jadvalga yangilash
+#             cursor.execute(f"UPDATE {table} SET file_id = %s WHERE id = %s", (file_id, row_id))
+#             conn.commit()
+#             await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.{nn}")
+#             await sent_photo.delete()
+#             time.sleep(0.1)
+#
+#     else:
+#         await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")

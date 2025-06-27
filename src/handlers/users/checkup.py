@@ -46,7 +46,7 @@ async def start_all_subjects(message: Message, state: FSMContext):
                 await message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
                 return
             selected_v = random.choice([v[0] for v in variants])
-            sql.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
+            sql.execute(f"SELECT file_id, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
             questions = sql.fetchall()
             if len(questions) < 10:
                 await message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
@@ -86,9 +86,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
     time_left = int(end_time - now)
     time_elapsed = int(now - data.get("start_time", now))
 
-    photo_path, correct_answer, subject_name = question
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    photo_path = os.path.join(current_dir, photo_path)
+    photo, correct_answer, subject_name = question
 
     variants = ["A", "B", "C", "D"]
     keyboard = []
@@ -105,9 +103,6 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
         keyboard.append(row)
     keyboard.append([InlineKeyboardButton(text="⛔ To‘xtatish", callback_data="stop-checkup")])
     btn = InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-    with open(photo_path, "rb") as image_file:
-        photo = BufferedInputFile(image_file.read(), filename=os.path.basename(photo_path))
 
     caption = (
         f"📖 FAN: <b>{subject_name}</b>\n"
