@@ -103,7 +103,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
                 )
             )
         keyboard.append(row)
-    keyboard.append([InlineKeyboardButton(text="⛔ To‘xtatish", callback_data="stop-quest")])
+    keyboard.append([InlineKeyboardButton(text="⛔ To‘xtatish", callback_data="stop-checkup")])
     btn = InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     with open(photo_path, "rb") as image_file:
@@ -181,12 +181,24 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         await state.clear()
 
 
-@check_router.callback_query(F.data == "stop-quest")
+@check_router.callback_query(F.data == "stop-checkup")
 async def stop_quiz(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.answer(
-        "Majburiy bloklardan test ishlash bo'limiga xush kelibsiz, kerakli fanni tanlang va davom eting!",
-        parse_mode="html",
-        reply_markup=await UserPanels.ques_manu()
-    )
     await callback.message.delete()
+    user_id = callback.message.from_user.id
+    sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id, ))
+    result = sql.fetchone()
+    if result:
+        ready, chance = result
+        if ready is True:
+            await callback.message.answer("Botimizga xush kelibsiz, kerakli bo'limni tanlab va davom eting!", parse_mode="html",
+                                 reply_markup=await UserPanels.asos_manu())
+        elif chance and ready is False:
+            ref_link = f"https://t.me/BMB_testbot?start={user_id}"
+            kb = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔗 Referal havolangiz", url=ref_link)]
+            ])
+            await callback.message.answer("Botimizga xush kelibsiz, Siz test sinovidagi boshlang'ich imkoniyatlaringizni foydalanib bo'lgansiz!\n\nSiz <b>5 ta do'stingizni botimizga taklif qiling</b> va <b>cheksiz</b> testlar ishlash imkoniyatini qo'lga kiriting!", parse_mode="html",
+                                 reply_markup=kb)
+        elif chance is False:
+            await callback.message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
