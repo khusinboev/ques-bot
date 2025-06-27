@@ -169,10 +169,9 @@ async def start_with_ref(message: Message, command: CommandObject):
 @user_router.message(F.text == "kepataqoy")
 async def start_cmd1(message: Message):
     user_id = message.from_user.id
-    base_dir = os.getcwd()
+    current_dir = os.path.dirname(os.path.abspath(__file__))
 
     table_names = ["history", "literature", "math"]
-
     for table in table_names:
         cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL LIMIT 1")
         result = cursor.fetchone()
@@ -181,7 +180,7 @@ async def start_cmd1(message: Message):
             continue  # Bu jadvalda hali fayl_id belgilanmagan rasm yo‘q
 
         row_id, photo_path = result
-        full_path = os.path.join(base_dir, photo_path)
+        full_path = os.path.join(current_dir, photo_path)
 
         if not os.path.exists(full_path):
             await message.answer(f"❌ Fayl topilmadi: {full_path}")
