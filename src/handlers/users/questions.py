@@ -29,19 +29,20 @@ async def start_cmd1(message: Message):
         reply_markup=await UserPanels.ques_manu()
     )
 
-@ques_router.message(F.text == "\ud83d\udcdd Matematika\ufe0f")
+@ques_router.message(F.text == "📝 Matematika️")
 async def start_math(message: Message, state: FSMContext):
     await start_subject(message, state, "math", "Matematika")
 
-@ques_router.message(F.text == "\ud83d\udcda Ona tili")
+
+@ques_router.message(F.text == "📚 Ona tili")
 async def start_literature(message: Message, state: FSMContext):
     await start_subject(message, state, "literature", "Ona tili")
 
-@ques_router.message(F.text == "\ud83d\udcda Tarix")
+@ques_router.message(F.text == "📚 Tarix")
 async def start_history(message: Message, state: FSMContext):
     await start_subject(message, state, "history", "Tarix")
 
-@ques_router.message(F.text == "\ud83e\uddee Hamasidan")
+@ques_router.message(F.text == "🧮 Hamasidan")
 async def start_all_subjects(message: Message, state: FSMContext):
     try:
         await message.delete()
