@@ -17,6 +17,11 @@ user_router = Router()
 @user_router.message(CommandStart())
 async def start_cmd1(message: Message):
     user_id = message.from_user.id
+    sql.execute("SELECT member FROM public.referal WHERE user_id=%s", (user_id,))
+    numb = sql.fetchone()[0]
+    if numb >= 3:
+        cursor.execute("UPDATE referal SET ready=TRUE WHERE user_id = %s", (user_id,))
+        conn.commit()
     cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))
     is_start = cursor.fetchone()[0]
     if is_start:
