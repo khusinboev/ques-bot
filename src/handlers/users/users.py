@@ -176,32 +176,31 @@ async def start_cmd1(message: Message):
     for table in table_names:
         nn+=1
         cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL")
-        result = cursor.fetchone()
+        result = cursor.fetchall()
 
-        if not result:
-            continue  # Bu jadvalda hali fayl_id belgilanmagan rasm yo‘q
+        for row in result:
 
-        row_id, photo_path = result
-        full_path = os.path.join(current_dir, photo_path)
+            row_id, photo_path = row
+            full_path = os.path.join(current_dir, photo_path)
 
-        if not os.path.exists(full_path):
-            await message.answer(f"❌ Fayl topilmadi: {full_path}")
-            continue
+            if not os.path.exists(full_path):
+                await message.answer(f"❌ Fayl topilmadi: {full_path}")
+                continue
 
-        with open(full_path, 'rb') as photo_file:
-            photo_bytes = photo_file.read()
+            with open(full_path, 'rb') as photo_file:
+                photo_bytes = photo_file.read()
 
-        telegram_file = BufferedInputFile(photo_bytes, filename=os.path.basename(full_path))
-        sent_photo = await message.answer_photo(photo=telegram_file)
+            telegram_file = BufferedInputFile(photo_bytes, filename=os.path.basename(full_path))
+            sent_photo = await message.answer_photo(photo=telegram_file)
 
-        # file_id ni olish
-        file_id = sent_photo.photo[-1].file_id
+            # file_id ni olish
+            file_id = sent_photo.photo[-1].file_id
 
-        # file_id ni jadvalga yangilash
-        cursor.execute(f"UPDATE {table} SET file_id = %s WHERE id = %s", (file_id, row_id))
-        conn.commit()
-        await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.{nn}")
-        await sent_photo.delete()
+            # file_id ni jadvalga yangilash
+            cursor.execute(f"UPDATE {table} SET file_id = %s WHERE id = %s", (file_id, row_id))
+            conn.commit()
+            await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.{nn}")
+            await sent_photo.delete()
 
     else:
         await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
