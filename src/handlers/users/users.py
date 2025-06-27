@@ -78,10 +78,9 @@ async def start_with_ref(message: Message, command: CommandObject):
         # Baza orqali tekshirib, yozamiz
         cursor.execute("SELECT 1 FROM referal WHERE user_id = %s", (user_id,))
         checks = cursor.fetchone()
-        print(checks)
         if checks:
             cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))
-            is_start = cursor.fetchone()
+            is_start = cursor.fetchone()[0]
             if is_start:
                 cursor.execute(
                     "UPDATE referal SET member = member + 1 WHERE user_id = %s", (referal_id,)
