@@ -49,7 +49,7 @@ async def new(message: Message):
     cur = conn.cursor()
     cur.execute("SELECT SUM(member) FROM referal;")
     total_members = cur.fetchone()[0]
-    await message.answer(f"Botga referallar orqali <b>{total_members}</b> ta odam qo'shilgan")
+    await message.answer(f"Botga referallar orqali <b>{total_members}</b> ta odam qo'shilgan", parse_mode="HTML")
     cur.close()
     conn.close()
 
