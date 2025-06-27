@@ -53,6 +53,17 @@ async def create_all_base():
             CONSTRAINT unique_cinema_id_quality UNIQUE (cinema_id, cinema_quality)
         )
     """)
+
+    db.commit()
+    sql.execute("""
+        CREATE TABLE IF NOT EXISTS public.referal  (
+            user_id INTEGER UNIQUE NOT NULL,
+            chance BOOLEAN DEFAULT FALSE,
+            member INTEGER DEFAULT 0,
+            ready BOOLEAN DEFAULT FALSE,
+            starter BOOLEAN DEFAULT TRUE
+        )
+    """)
     db.commit()
 
 

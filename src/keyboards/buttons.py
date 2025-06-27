@@ -120,6 +120,18 @@ class UserPanels:
         return btn
 
     @staticmethod
+    async def chance_manu():
+        btn = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="📚 Majburiy blokdan test ishlash")
+                ]
+            ],
+            resize_keyboard=True,
+        )
+        return btn
+
+    @staticmethod
     async def ques_manu():
         btn = ReplyKeyboardMarkup(
             keyboard=[

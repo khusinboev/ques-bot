@@ -29,6 +29,16 @@ class RegisterUserMiddleware(BaseMiddleware):
                 (user_id, lang_code, date)
             )
             conn.commit()
+        cur.execute("SELECT user_id FROM public.referal WHERE user_id = %s", (user_id,))
+        if not cur.fetchone():
+            cur.execute("DELETE FROM public.referal WHERE user_id = %s", (user_id,))
+            conn.commit()
+
+            cur.execute(
+                "INSERT INTO referal (user_id) VALUES (%s)",
+                (user_id, )
+            )
+            conn.commit()
 
         cur.close()
         conn.close()

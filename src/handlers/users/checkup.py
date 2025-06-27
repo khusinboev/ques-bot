@@ -10,10 +10,10 @@ from aiogram.types import (
     CallbackQuery, BufferedInputFile, InputMediaPhoto, ReplyKeyboardRemove
 )
 
-from config import cursor, sql
+from config import sql, db
 from src.keyboards.buttons import UserPanels
 
-ques_router = Router()
+check_router = Router()
 
 
 class FormQues(StatesGroup):
@@ -21,70 +21,32 @@ class FormQues(StatesGroup):
     current_index = State()
     score = State()
     end_time = State()
-    subject_stats = State()  # dict: {subject: {'correct': int, 'score': float}}
+    subject_stats = State()
     start_time = State()
 
 
-@ques_router.message(F.text == "📚 Majburiy blokdan testlar")
-async def start_cmd1(message: Message):
-    user_id = message.from_user.id
-    sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id, ))
-    result = sql.fetchone()
-    if result:
-        ready, chance = result
-        if ready is True:
-            await message.answer(
-                "Majburiy bloklardan test ishlash bo'limiga xush kelibsiz, kerakli fanni tanlang va davom eting!",
-                parse_mode="html",
-                reply_markup=await UserPanels.ques_manu()
-            )
-        elif chance and ready is False:
-            ref_link = f"https://t.me/BMB_testbot?start={user_id}"
-            kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔗 Referal havolangiz", url=ref_link)]
-            ])
-            await message.answer("Botimizga xush kelibsiz", reply_markup=ReplyKeyboardRemove())
-            await message.answer("Siz test sinovidagi boshlang'ich imkoniyatlaringizni foydalanib bo'lgansiz!\n\nSiz <b>5 ta do'stingizni botimizga taklif qiling</b> va <b>cheksiz</b> testlar ishlash imkoniyatini qo'lga kiriting!", parse_mode="html",
-                                 reply_markup=kb)
-        elif chance is False:
-            await message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
-
-
-@ques_router.message(F.text == "📝 Matematika️")
-async def start_math(message: Message, state: FSMContext):
-    await start_subject(message, state, "math", "Matematika", duration=20 * 60)
-
-
-@ques_router.message(F.text == "📚 Ona tili")
-async def start_literature(message: Message, state: FSMContext):
-    await start_subject(message, state, "literature", "Ona tili", duration=20 * 60)
-
-
-@ques_router.message(F.text == "📚 Tarix")
-async def start_history(message: Message, state: FSMContext):
-    await start_subject(message, state, "history", "Tarix", duration=20 * 60)
-
-
-@ques_router.message(F.text == "🧮 Hamasidan")
+@check_router.message(F.text == "📚 Majburiy blokdan test ishlash")
 async def start_all_subjects(message: Message, state: FSMContext):
-    try:
-        await message.delete()
-    except:
-        pass
+    user_id = message.from_user.id
+    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
+    if sql.fetchone():
+        sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
+        db.commit()
+
 
     subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "Tarix")]
     selected_all = []
     stats = {}
 
     for table_name, subject_name in subjects:
-        cursor.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
-        variants = cursor.fetchall()
+        sql.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
+        variants = sql.fetchall()
         if not variants:
             await message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
             return
         selected_v = random.choice([v[0] for v in variants])
-        cursor.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
-        questions = cursor.fetchall()
+        sql.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
+        questions = sql.fetchall()
         if len(questions) < 10:
             await message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
             return
@@ -107,42 +69,6 @@ async def start_all_subjects(message: Message, state: FSMContext):
 
     await message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
     await show_question(message, selected_all[0], 0, 0.0, state)
-
-
-async def start_subject(message: Message, state: FSMContext, table_name: str, subject_name: str, duration: int):
-    try:
-        await message.delete()
-    except:
-        pass
-
-    cursor.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
-    variants = cursor.fetchall()
-    if not variants:
-        await message.answer("Fan uchun variantlar topilmadi.")
-        return
-    selected_variant = random.choice([v[0] for v in variants])
-    cursor.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_variant,))
-    questions = cursor.fetchall()
-    if len(questions) < 10:
-        await message.answer("Yetarlicha test mavjud emas.")
-        return
-
-    selected = [(q[0], q[1], subject_name) for q in random.sample(questions, 10)]
-    end_time = asyncio.get_event_loop().time() + duration
-    start_time = asyncio.get_event_loop().time()
-
-    await state.set_data({
-        "ques_list": selected,
-        "current_index": 0,
-        "score": 0.0,
-        "total_questions": len(selected),
-        "end_time": end_time,
-        "subject_stats": {subject_name: {'correct': 0, 'score': 0.0}},
-        "start_time": start_time
-    })
-
-    await message.answer(f"Test boshlandi ({selected_variant}-variant)", reply_markup=ReplyKeyboardRemove())
-    await show_question(message, selected[0], 0, 0.0, state)
 
 
 async def show_question(message_or_callback, question, index, score, state: FSMContext):
@@ -214,7 +140,7 @@ async def force_finish(message_or_callback, state: FSMContext):
     await state.clear()
 
 
-@ques_router.callback_query(F.data.startswith("answer:"))
+@check_router.callback_query(F.data.startswith("answer:"))
 async def handle_answer(callback: CallbackQuery, state: FSMContext):
     data = callback.data.split(":")
     is_correct = data[2]
@@ -252,7 +178,7 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         await state.clear()
 
 
-@ques_router.callback_query(F.data == "stop-quest")
+@check_router.callback_query(F.data == "stop-quest")
 async def stop_quiz(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.answer(
