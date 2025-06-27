@@ -57,9 +57,9 @@ async def create_all_base():
     db.commit()
     sql.execute("""
         CREATE TABLE IF NOT EXISTS public.referal  (
-            user_id INTEGER UNIQUE NOT NULL,
+            user_id BIGINT UNIQUE NOT NULL,
             chance BOOLEAN DEFAULT FALSE,
-            member INTEGER DEFAULT 0,
+            member BIGINT DEFAULT 0,
             ready BOOLEAN DEFAULT FALSE,
             starter BOOLEAN DEFAULT TRUE
         )
