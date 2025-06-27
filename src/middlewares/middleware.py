@@ -35,8 +35,8 @@ class RegisterUserMiddleware(BaseMiddleware):
             conn.commit()
 
             cur.execute(
-                "INSERT INTO referal (user_id) VALUES (%s)",
-                (user_id, )
+                "INSERT INTO public.referal (user_id, chance ) VALUES (%s, %s)",
+                (user_id, False)
             )
             conn.commit()
 
