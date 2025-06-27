@@ -188,7 +188,7 @@ async def stop_quiz(callback: CallbackQuery, state: FSMContext):
     user_id = callback.message.from_user.id
     sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id, ))
     result = sql.fetchone()
-    if result:
+    try:
         ready, chance = result
         if ready is True:
             await callback.message.answer("Botimizga xush kelibsiz, kerakli bo'limni tanlab va davom eting!", parse_mode="html",
@@ -204,4 +204,5 @@ async def stop_quiz(callback: CallbackQuery, state: FSMContext):
         elif chance is False:
             await callback.message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
         print("bera")
-    print("imbera")
+    except:
+        await callback.message.answer("/start")
