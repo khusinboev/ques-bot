@@ -15,11 +15,15 @@ from src.keyboards.buttons import UserPanels
 
 ques_router = Router()
 
+
 class FormQues(StatesGroup):
     ques_list = State()
     current_index = State()
     score = State()
     end_time = State()
+    subject_stats = State()  # dict: {subject: {'correct': int, 'score': float}}
+    start_time = State()
+
 
 @ques_router.message(F.text == "📚 Majburiy blokdan testlar")
 async def start_cmd1(message: Message):
@@ -29,18 +33,21 @@ async def start_cmd1(message: Message):
         reply_markup=await UserPanels.ques_manu()
     )
 
+
 @ques_router.message(F.text == "📝 Matematika️")
 async def start_math(message: Message, state: FSMContext):
-    await start_subject(message, state, "math", "Matematika")
+    await start_subject(message, state, "math", "Matematika", duration=20 * 60)
 
 
 @ques_router.message(F.text == "📚 Ona tili")
 async def start_literature(message: Message, state: FSMContext):
-    await start_subject(message, state, "literature", "Ona tili")
+    await start_subject(message, state, "literature", "Ona tili", duration=20 * 60)
+
 
 @ques_router.message(F.text == "📚 Tarix")
 async def start_history(message: Message, state: FSMContext):
-    await start_subject(message, state, "history", "Tarix")
+    await start_subject(message, state, "history", "Tarix", duration=20 * 60)
+
 
 @ques_router.message(F.text == "🧮 Hamasidan")
 async def start_all_subjects(message: Message, state: FSMContext):
@@ -51,6 +58,7 @@ async def start_all_subjects(message: Message, state: FSMContext):
 
     subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "Tarix")]
     selected_all = []
+    stats = {}
 
     for table_name, subject_name in subjects:
         cursor.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
@@ -64,23 +72,28 @@ async def start_all_subjects(message: Message, state: FSMContext):
         if len(questions) < 10:
             await message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
             return
-        selected_all.extend([(q[0], q[1], subject_name) for q in random.sample(questions, 10)])
+        sample = random.sample(questions, 10)
+        selected_all.extend([(q[0], q[1], subject_name) for q in sample])
+        stats[subject_name] = {'correct': 0, 'score': 0.0}
 
-    end_time = asyncio.get_event_loop().time() + 60 * 20
+    end_time = asyncio.get_event_loop().time() + 60 * 60
+    start_time = asyncio.get_event_loop().time()
 
     await state.set_data({
         "ques_list": selected_all,
         "current_index": 0,
         "score": 0.0,
         "total_questions": len(selected_all),
-        "end_time": end_time
+        "end_time": end_time,
+        "subject_stats": stats,
+        "start_time": start_time
     })
 
     await message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
     await show_question(message, selected_all[0], 0, 0.0, state)
 
 
-async def start_subject(message: Message, state: FSMContext, table_name: str, subject_name: str):
+async def start_subject(message: Message, state: FSMContext, table_name: str, subject_name: str, duration: int):
     try:
         await message.delete()
     except:
@@ -89,27 +102,27 @@ async def start_subject(message: Message, state: FSMContext, table_name: str, su
     cursor.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
     variants = cursor.fetchall()
     if not variants:
-        print(table_name)
-        print(variants)
         await message.answer("Fan uchun variantlar topilmadi.")
         return
     selected_variant = random.choice([v[0] for v in variants])
     cursor.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_variant,))
     questions = cursor.fetchall()
     if len(questions) < 10:
-        print(questions)
         await message.answer("Yetarlicha test mavjud emas.")
         return
 
     selected = [(q[0], q[1], subject_name) for q in random.sample(questions, 10)]
-    end_time = asyncio.get_event_loop().time() + 60 * 20
+    end_time = asyncio.get_event_loop().time() + duration
+    start_time = asyncio.get_event_loop().time()
 
     await state.set_data({
         "ques_list": selected,
         "current_index": 0,
         "score": 0.0,
         "total_questions": len(selected),
-        "end_time": end_time
+        "end_time": end_time,
+        "subject_stats": {subject_name: {'correct': 0, 'score': 0.0}},
+        "start_time": start_time
     })
 
     await message.answer(f"Test boshlandi ({selected_variant}-variant)", reply_markup=ReplyKeyboardRemove())
@@ -120,15 +133,15 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
     data = await state.get_data()
     total_questions = data.get("total_questions", 10)
     end_time = data.get("end_time")
-
     now = asyncio.get_event_loop().time()
     if now > end_time:
         await force_finish(message_or_callback, state)
         return
 
-    photo_path, correct_answer, *subject = question
-    subject_name = subject[0] if subject else "Fan"
+    time_left = int(end_time - now)
+    time_elapsed = int(now - data.get("start_time", now))
 
+    photo_path, correct_answer, subject_name = question
     current_dir = os.path.dirname(os.path.abspath(__file__))
     photo_path = os.path.join(current_dir, photo_path)
 
@@ -141,11 +154,11 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
             row.append(
                 InlineKeyboardButton(
                     text=option,
-                    callback_data=f"answer:{option}:{suffix}:{index}:{score}"
+                    callback_data=f"answer:{option}:{suffix}:{index}:{score}:{subject_name}"
                 )
             )
         keyboard.append(row)
-    keyboard.append([InlineKeyboardButton(text="\u26d4 To‘xtatish", callback_data="stop-quest")])
+    keyboard.append([InlineKeyboardButton(text="⛔ To‘xtatish", callback_data="stop-quest")])
     btn = InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     with open(photo_path, "rb") as image_file:
@@ -154,8 +167,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
     caption = (
         f"📖 FAN: <b>{subject_name}</b>\n"
         f"🧮 <b>Savol: {index + 1} / {total_questions}</b>\n"
-        "Quyidagilar orqali javob berasi!"
-    )
+        f"⏱ O‘tgan vaqt: {time_elapsed // 60} daqiqa {time_elapsed % 60} soniya | Qolgan: {time_left // 60} daq. {time_left % 60} son.")
 
     if isinstance(message_or_callback, Message):
         await message_or_callback.answer_photo(photo=photo, caption=caption, reply_markup=btn, parse_mode="HTML")
@@ -172,10 +184,17 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
 async def force_finish(message_or_callback, state: FSMContext):
     data = await state.get_data()
     score = data.get("score", 0.0)
+    stats = data.get("subject_stats", {})
     questions = data.get("ques_list", [])
-    await message_or_callback.answer(
-        f"⏱ Vaqt tugadi!\nSiz {len(questions)} ta savoldan {int((score + 0.01) // 1.1)} tasiga to'g'ri javob berib {round(score,1)} ball to‘pladingiz!",
-        reply_markup=await UserPanels.ques_manu())
+    elapsed = int(asyncio.get_event_loop().time() - data.get("start_time", 0))
+
+    result = "⏱ Vaqt tugadi!\n"
+    for subject, info in stats.items():
+        result += f"\n📘 {subject}: {info['correct']} ta to‘g‘ri | {round(info['score'], 1)} ball"
+    result += f"\n\nUmumiy: {int((score + 0.01) // 1.1)} ta to‘g‘ri | {round(score, 1)} ball"
+    result += f"\n⏳ {elapsed // 60} daqiqa {elapsed % 60} soniyada yakunlandi"
+
+    await message_or_callback.answer(result, reply_markup=await UserPanels.ques_manu())
     await state.clear()
 
 
@@ -185,6 +204,7 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
     is_correct = data[2]
     index = int(data[3])
     score = float(data[4])
+    subject = data[5]
 
     state_data = await state.get_data()
     end_time = state_data.get("end_time")
@@ -194,17 +214,24 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
 
     if is_correct == "+":
         score += 1.1
+        state_data["subject_stats"][subject]["correct"] += 1
+        state_data["subject_stats"][subject]["score"] += 1.1
 
     questions = state_data.get("ques_list")
     next_index = index + 1
 
     if next_index < len(questions):
-        await state.update_data(current_index=next_index, score=score)
+        await state.update_data(current_index=next_index, score=score, subject_stats=state_data["subject_stats"])
         await show_question(callback, questions[next_index], next_index, score, state)
     else:
-        await callback.message.answer(
-            f"Siz {len(questions)} ta savoldan {int((score + 0.01) // 1.1)} tasiga to'g'ri javob berib {round(score,1)} ball to‘pladingiz!",
-            reply_markup=await UserPanels.ques_manu())
+        elapsed = int(asyncio.get_event_loop().time() - state_data.get("start_time", 0))
+        result = "✅ Test yakunlandi!\n"
+        for subject, info in state_data["subject_stats"].items():
+            result += f"\n📘 {subject}: {info['correct']} ta to‘g‘ri | {round(info['score'], 1)} ball"
+        result += f"\n\nUmumiy: {int((score + 0.01) // 1.1)} ta to‘g‘ri | {round(score, 1)} ball"
+        result += f"\n⏳ {elapsed // 60} daqiqa {elapsed % 60} soniyada yakunlandi"
+
+        await callback.message.answer(result, reply_markup=await UserPanels.ques_manu())
         await callback.message.delete()
         await state.clear()
 
