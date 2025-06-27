@@ -97,6 +97,10 @@ async def start_with_ref(message: Message, command: CommandObject):
                         "UPDATE referal SET starter=FALSE WHERE user_id = %s", (referal_id,)
                     )
                     conn.commit()
+                    cursor.execute(
+                        "UPDATE starter SET starter=FALSE WHERE user_id = %s", (user_id,)
+                    )
+                    conn.commit()
 
     sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
     result = sql.fetchone()
