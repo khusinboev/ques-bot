@@ -59,7 +59,7 @@ async def start_all_subjects(message: Message, state: FSMContext):
             await message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
             return
         selected_v = random.choice([v[0] for v in variants])
-        cursor.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=? AND status='True'", (selected_v,))
+        cursor.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
         questions = cursor.fetchall()
         if len(questions) < 10:
             await message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
@@ -94,7 +94,7 @@ async def start_subject(message: Message, state: FSMContext, table_name: str, su
         await message.answer("Fan uchun variantlar topilmadi.")
         return
     selected_variant = random.choice([v[0] for v in variants])
-    cursor.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=? AND status='True'", (selected_variant,))
+    cursor.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_variant,))
     questions = cursor.fetchall()
     if len(questions) < 10:
         print(questions)
