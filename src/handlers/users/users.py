@@ -172,7 +172,9 @@ async def start_cmd1(message: Message):
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
     table_names = ["history", "literature", "math"]
+    nn = 0
     for table in table_names:
+        nn+=1
         cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL LIMIT 1")
         result = cursor.fetchone()
 
@@ -198,8 +200,8 @@ async def start_cmd1(message: Message):
         # file_id ni jadvalga yangilash
         cursor.execute(f"UPDATE {table} SET file_id = %s WHERE id = %s", (file_id, row_id))
         conn.commit()
-        await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.")
-        break  # Faqat bitta rasm yuborish
+        await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.{nn}")
+        await sent_photo.delete()
 
     else:
         await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
