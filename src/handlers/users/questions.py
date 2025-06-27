@@ -76,7 +76,7 @@ async def start_all_subjects(message: Message, state: FSMContext):
         "end_time": end_time
     })
 
-    await message.answer("\ud83d\udcda 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
+    await message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
     await show_question(message, selected_all[0], 0, 0.0, state)
 
 
@@ -152,8 +152,8 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
         photo = BufferedInputFile(image_file.read(), filename=os.path.basename(photo_path))
 
     caption = (
-        f"\ud83d\udcd6 FAN: <b>{subject_name}</b>\n"
-        f"\ud83e\uddee <b>Savol: {index + 1} / {total_questions}</b>\n"
+        f"📖 FAN: <b>{subject_name}</b>\n"
+        f"🧮 <b>Savol: {index + 1} / {total_questions}</b>\n"
         "Quyidagilar orqali javob berasi!"
     )
 
