@@ -26,6 +26,12 @@ class FormQues(StatesGroup):
     start_time = State()
 
 
+@ques_router.message(F.text == "◀️ Ortga")
+async def start_math(message: Message, state: FSMContext):
+    await message.answer("Botimizga xush kelibsiz, kerakli bo'limni tanlab va davom eting!", parse_mode="html",
+                         reply_markup=await UserPanels.asos_manu())
+
+
 @ques_router.message(F.text == "📚 Majburiy blokdan testlar")
 async def start_cmd1(message: Message):
     user_id = message.from_user.id
