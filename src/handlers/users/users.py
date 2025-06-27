@@ -32,12 +32,11 @@ async def start_cmd1(message: Message):
             await message.answer("Botimizga xush kelibsiz, kerakli bo'limni tanlab va davom eting!", parse_mode="html",
                                  reply_markup=await UserPanels.asos_manu())
         elif chance and ready is False:
-            ref_link = f"https://t.me/BMB_testbot?start={user_id}"
-            kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔗 Referal havolangiz", url=ref_link)]
-            ])
-            await message.answer("Botimizga xush kelibsiz, Siz test sinovidagi boshlang'ich imkoniyatlaringizni foydalanib bo'lgansiz!\n\nSiz <b>5 ta do'stingizni botimizga taklif qiling</b> va <b>cheksiz</b> testlar ishlash imkoniyatini qo'lga kiriting!", parse_mode="html",
-                                 reply_markup=kb)
+            await message.answer(
+                "Siz test sinovidagi boshlang'ich imkoniyatlaringizni foydalanib bo'lgansiz!\n\nSiz <b>5 ta do'stingizni botimizga taklif qiling</b> va <b>cheksiz</b> testlar ishlash imkoniyatini qo'lga kiriting!",
+                parse_mode="html",
+                reply_markup=await CheckData.share_link(user_id)
+            )
         elif chance is False:
             await message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
 
@@ -99,13 +98,10 @@ async def start_with_ref(message: Message, command: CommandObject):
             await message.answer("Botimizga xush kelibsiz, kerakli bo'limni tanlab va davom eting!", parse_mode="html",
                                  reply_markup=await UserPanels.asos_manu())
         elif chance and ready is False:
-            ref_link = f"https://t.me/BMB_testbot?start={user_id}"
-            kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔗 Referal havolangiz", url=ref_link)]
-            ])
             await message.answer(
-                "Botimizga xush kelibsiz, Siz test sinovidagi boshlang'ich imkoniyatlaringizni foydalanib bo'lgansiz!\n\nSiz <b>5 ta do'stingizni botimizga taklif qiling</b> va <b>cheksiz</b> testlar ishlash imkoniyatini qo'lga kiriting!",
+                "Siz test sinovidagi boshlang'ich imkoniyatlaringizni foydalanib bo'lgansiz!\n\nSiz <b>5 ta do'stingizni botimizga taklif qiling</b> va <b>cheksiz</b> testlar ishlash imkoniyatini qo'lga kiriting!",
                 parse_mode="html",
-                reply_markup=kb)
+                reply_markup=await CheckData.share_link(user_id)
+            )
         elif chance is False:
             await message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())

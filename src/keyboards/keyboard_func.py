@@ -9,6 +9,18 @@ from config import sql, db, bot, ADMIN_ID
 
 class CheckData:
     @staticmethod
+    async def share_link(user_id):
+        ref_link = f"https://t.me/BMB_testbot?start={user_id}"
+        share_link = f"https://t.me/share/url?url={ref_link}&text=Salom! Men senga ajoyib test bot tavsiya qilaman 👇"
+
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔗 Referal havolangiz", url=ref_link)],
+            [InlineKeyboardButton(text="📤 Do‘stlarga ulashish", url=share_link)]
+        ])
+
+        return kb
+
+    @staticmethod
     async def check_member(bot: Bot, user_id: int):
         sql.execute("SELECT chat_id FROM public.mandatorys")
         mandatory = sql.fetchall()
