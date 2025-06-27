@@ -6,7 +6,7 @@ from aiogram.filters import CommandStart, CommandObject
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InlineQuery, \
-    InlineQueryResultArticle, InputTextMessageContent, ChosenInlineResult
+    InlineQueryResultArticle, InputTextMessageContent, ChosenInlineResult, BufferedInputFile
 
 from config import sql, bot, ADMIN_ID, cursor, conn, dp
 from src.keyboards.buttons import UserPanels
@@ -164,3 +164,43 @@ async def start_with_ref(message: Message, command: CommandObject):
                 reply_markup=await CheckData.share_link(user_id))
         elif chance is False:
             await message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
+
+
+@user_router.message(F.text == "kepataqoy")
+async def start_cmd1(message: Message):
+    user_id = message.from_user.id
+    base_dir = os.getcwd()
+
+    table_names = ["history", "literature", "math"]
+
+    for table in table_names:
+        cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL LIMIT 1")
+        result = cursor.fetchone()
+
+        if not result:
+            continue  # Bu jadvalda hali fayl_id belgilanmagan rasm yo‘q
+
+        row_id, photo_path = result
+        full_path = os.path.join(base_dir, photo_path)
+
+        if not os.path.exists(full_path):
+            await message.answer(f"❌ Fayl topilmadi: {full_path}")
+            continue
+
+        with open(full_path, 'rb') as photo_file:
+            photo_bytes = photo_file.read()
+
+        telegram_file = BufferedInputFile(photo_bytes, filename=os.path.basename(full_path))
+        sent_photo = await message.answer_photo(photo=telegram_file)
+
+        # file_id ni olish
+        file_id = sent_photo.photo[-1].file_id
+
+        # file_id ni jadvalga yangilash
+        cursor.execute(f"UPDATE {table} SET file_id = %s WHERE id = %s", (file_id, row_id))
+        conn.commit()
+        await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.")
+        break  # Faqat bitta rasm yuborish
+
+    else:
+        await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
