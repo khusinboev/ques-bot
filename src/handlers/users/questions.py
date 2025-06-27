@@ -89,6 +89,7 @@ async def start_subject(message: Message, state: FSMContext, table_name: str, su
     cursor.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='active'")
     variants = cursor.fetchall()
     if not variants:
+        print(table_name)
         print(variants)
         await message.answer("Fan uchun variantlar topilmadi.")
         return
