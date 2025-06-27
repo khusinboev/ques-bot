@@ -77,7 +77,9 @@ async def start_with_ref(message: Message, command: CommandObject):
     if referal_id and str(user_id) != referal_id:
         # Baza orqali tekshirib, yozamiz
         cursor.execute("SELECT 1 FROM referal WHERE user_id = %s", (user_id,))
-        if cursor.fetchone():
+        checks = cursor.fetchone()
+        print(checks)
+        if checks:
             cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))
             is_start = cursor.fetchone()
             if is_start:
