@@ -112,7 +112,7 @@ class UserPanels:
         btn = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text="📚 Majburiydan testlar")
+                    KeyboardButton(text="📚 Majburiy blokdan testlar")
                 ]
             ],
             resize_keyboard=True,

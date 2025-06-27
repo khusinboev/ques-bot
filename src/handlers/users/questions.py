@@ -21,7 +21,7 @@ class FormQues(StatesGroup):
     score = State()
     end_time = State()
 
-@ques_router.message(F.text == "\ud83d\udcda Majburiydan testlar")
+@ques_router.message(F.text == "📚 Majburiy blokdan testlar")
 async def start_cmd1(message: Message):
     await message.answer(
         "Majburiy bloklardan test ishlash bo'limiga xush kelibsiz, kerakli fanni tanlang va davom eting!",
