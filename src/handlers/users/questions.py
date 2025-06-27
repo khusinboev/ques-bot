@@ -26,40 +26,6 @@ class FormQues(StatesGroup):
     start_time = State()
 
 
-@ques_router.message(F.text == "◀️ Ortga")
-async def start_math(message: Message, state: FSMContext):
-    await message.answer("Botimizga xush kelibsiz, kerakli bo'limni tanlab va davom eting!", parse_mode="html",
-                         reply_markup=await UserPanels.asos_manu())
-
-
-@ques_router.message(F.text == "📚 Majburiy blokdan testlar")
-async def start_cmd1(message: Message):
-    user_id = message.from_user.id
-    check_status, channels = await CheckData.check_member(bot, user_id)
-    if check_status:
-        sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id, ))
-        result = sql.fetchone()
-        if result:
-            ready, chance = result
-            if ready is True:
-                await message.answer(
-                    "Majburiy bloklardan test ishlash bo'limiga xush kelibsiz, kerakli fanni tanlang va davom eting!",
-                    parse_mode="html",
-                    reply_markup=await UserPanels.ques_manu()
-                )
-            elif chance and ready is False:
-                sql.execute("SELECT member FROM public.referal WHERE user_id=%s", (user_id,))
-                number = sql.fetchone()
-                await message.answer("Botimizga xush kelibsiz", reply_markup=ReplyKeyboardRemove())
-                await message.answer(f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \n<code>https://t.me/BMB_testbot?start={user_id}</code>\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\nSiz {number} ta odam taklif qildingiz, yana {3-number}ta odam taklif qilishingiz kerak", parse_mode="html",
-                                     reply_markup=await CheckData.share_link(user_id))
-            elif chance is False:
-                await message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
-    else:
-        await message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
-                             reply_markup=await CheckData.channels_btn(channels))
-
-
 @ques_router.message(F.text == "📝 Matematika️")
 async def start_math(message: Message, state: FSMContext):
     check_status, channels = await CheckData.check_member(bot, message.from_user.id)

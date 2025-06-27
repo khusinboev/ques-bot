@@ -16,6 +16,9 @@ class AdminPanel:
                         [
                             KeyboardButton(text="🔧Adminlar👨‍💻"),
                             KeyboardButton(text="✍Xabarlar")
+                        ],
+                        [
+                            KeyboardButton(text="📊Referallar")
                         ]
                     ],
                     resize_keyboard=True,
@@ -106,18 +109,6 @@ class UserPanels:
         join_inline.append([InlineKeyboardButton(text="✅Obuna bo'ldim", callback_data="check")])
         button = InlineKeyboardMarkup(inline_keyboard=join_inline)
         return button
-
-    @staticmethod
-    async def asos_manu():
-        btn = ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(text="📚 Majburiy blokdan testlar")
-                ]
-            ],
-            resize_keyboard=True,
-        )
-        return btn
 
     @staticmethod
     async def chance_manu():

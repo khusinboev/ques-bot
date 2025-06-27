@@ -43,6 +43,18 @@ async def backs(message: Message, state: FSMContext):
 
 
 # Statistika
+@admin_router.message(F.text == "📊Referallar", F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))
+async def new(message: Message):
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+    cur.execute("SELECT SUM(member) FROM referal;")
+    total_members = cur.fetchone()[0]
+    await message.answer(f"Botga referallar orqali <b>{total_members}</b> ta odam qo'shilgan")
+    cur.close()
+    conn.close()
+
+
+# Statistika
 @admin_router.message(F.text == "📊Statistika", F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))
 async def new(message: Message):
     now = datetime.now(pytz.timezone("Asia/Tashkent")).date()

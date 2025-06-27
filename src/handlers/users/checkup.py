@@ -191,8 +191,11 @@ async def stop_quiz(callback: CallbackQuery, state: FSMContext):
     try:
         ready, chance = result
         if ready is True:
-            await callback.message.answer("Botimizga xush kelibsiz, kerakli bo'limni tanlab va davom eting!", parse_mode="html",
-                                 reply_markup=await UserPanels.asos_manu())
+            await callback.message.answer(
+                "Tabriklaymiz! Sizga cheksiz test ishlash imkoniyati taqdim etildi!",
+                parse_mode="html",
+                reply_markup=await UserPanels.ques_manu()
+            )
         elif chance and ready is False:
             sql.execute("SELECT member FROM public.referal WHERE user_id=%s", (user_id,))
             number = sql.fetchone()
