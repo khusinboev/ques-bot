@@ -10,8 +10,9 @@ from aiogram.types import (
     CallbackQuery, BufferedInputFile, InputMediaPhoto, ReplyKeyboardRemove
 )
 
-from config import sql, db
+from config import sql, db, bot
 from src.keyboards.buttons import UserPanels
+from src.keyboards.keyboard_func import CheckData
 
 check_router = Router()
 
@@ -27,48 +28,50 @@ class FormQues(StatesGroup):
 
 @check_router.message(F.text == "📚 Majburiy blokdan test ishlash")
 async def start_all_subjects(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
-    if sql.fetchone():
-        sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
-        db.commit()
+    check_status, channels = await CheckData.check_member(bot, message.from_user.id)
+    if check_status:
+        user_id = message.from_user.id
+        sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
+        if sql.fetchone():
+            sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
+            db.commit()
+        subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "Tarix")]
+        selected_all = []
+        stats = {}
 
+        for table_name, subject_name in subjects:
+            sql.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
+            variants = sql.fetchall()
+            if not variants:
+                await message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
+                return
+            selected_v = random.choice([v[0] for v in variants])
+            sql.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
+            questions = sql.fetchall()
+            if len(questions) < 10:
+                await message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
+                return
+            sample = random.sample(questions, 10)
+            selected_all.extend([(q[0], q[1], subject_name) for q in sample])
+            stats[subject_name] = {'correct': 0, 'score': 0.0}
 
-    subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "Tarix")]
-    selected_all = []
-    stats = {}
+        end_time = asyncio.get_event_loop().time() + 60 * 60
+        start_time = asyncio.get_event_loop().time()
 
-    for table_name, subject_name in subjects:
-        sql.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
-        variants = sql.fetchall()
-        if not variants:
-            await message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
-            return
-        selected_v = random.choice([v[0] for v in variants])
-        sql.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
-        questions = sql.fetchall()
-        if len(questions) < 10:
-            await message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
-            return
-        sample = random.sample(questions, 10)
-        selected_all.extend([(q[0], q[1], subject_name) for q in sample])
-        stats[subject_name] = {'correct': 0, 'score': 0.0}
-
-    end_time = asyncio.get_event_loop().time() + 60 * 60
-    start_time = asyncio.get_event_loop().time()
-
-    await state.set_data({
-        "ques_list": selected_all,
-        "current_index": 0,
-        "score": 0.0,
-        "total_questions": len(selected_all),
-        "end_time": end_time,
-        "subject_stats": stats,
-        "start_time": start_time
-    })
-
-    await message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
-    await show_question(message, selected_all[0], 0, 0.0, state)
+        await state.set_data({
+            "ques_list": selected_all,
+            "current_index": 0,
+            "score": 0.0,
+            "total_questions": len(selected_all),
+            "end_time": end_time,
+            "subject_stats": stats,
+            "start_time": start_time
+        })
+        await message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
+        await show_question(message, selected_all[0], 0, 0.0, state)
+    else:
+        await message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
+                             reply_markup=await CheckData.channels_btn(channels))
 
 
 async def show_question(message_or_callback, question, index, score, state: FSMContext):

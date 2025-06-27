@@ -14,7 +14,7 @@ async def chosen_lang(message: Message, state: FSMContext):
         await message.delete()
         await state.clear()
     except: pass
-    await message.answer("<b>Quyidagi menulardan birini tanlang 👇</b>", parse_mode="html",
+    await message.answer("<b>/start /start</b>", parse_mode="html",
                          reply_markup=await UserPanels.asos_manu())
 
 
