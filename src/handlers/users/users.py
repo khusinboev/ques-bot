@@ -175,7 +175,7 @@ async def start_cmd1(message: Message):
     nn = 0
     for table in table_names:
         nn+=1
-        cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL LIMIT 1")
+        cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL")
         result = cursor.fetchone()
 
         if not result:
