@@ -203,3 +203,5 @@ async def stop_quiz(callback: CallbackQuery, state: FSMContext):
                 reply_markup=await CheckData.share_link(user_id))
         elif chance is False:
             await callback.message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
+        print("bera")
+    print("imbera")
