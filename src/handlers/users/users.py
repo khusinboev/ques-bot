@@ -86,7 +86,7 @@ async def start_with_ref(message: Message, command: CommandObject):
             if is_start:
                 print(is_start)
                 cursor.execute(
-                    "UPDATE starter SET starter=%s WHERE user_id = %s", (False, user_id,)
+                    "UPDATE referal SET starter=%s WHERE user_id = %s", (False, user_id,)
                 )
                 conn.commit()
                 cursor.execute(
