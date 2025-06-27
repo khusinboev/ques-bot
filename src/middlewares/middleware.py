@@ -33,8 +33,7 @@ class RegisterUserMiddleware(BaseMiddleware):
         if not cur.fetchone():
             cur.execute("DELETE FROM public.referal WHERE user_id = %s", (user_id,))
             conn.commit()
-
-            cur.execute("INSERT INTO public.referal (user_id, chance) VALUES (%s, %s)", (user_id, False))
+            cur.execute("INSERT INTO public.referal (user_id, chance, starter) VALUES (%s, %s, %s)", (user_id, False, True))
             conn.commit()
 
         cur.close()
