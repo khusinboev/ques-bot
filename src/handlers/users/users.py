@@ -21,7 +21,7 @@ async def start_cmd1(message: Message):
     is_start = cursor.fetchone()
     if is_start:
         cursor.execute(
-            "UPDATE referal SET starter = TRUE WHERE user_id = %s", (user_id,)
+            "UPDATE referal SET starter = FALSE WHERE user_id = %s", (user_id,)
         )
         conn.commit()
 

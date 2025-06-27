@@ -99,7 +99,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
             row.append(
                 InlineKeyboardButton(
                     text=option,
-                    callback_data=f"answer:{option}:{suffix}:{index}:{score}:{subject_name}"
+                    callback_data=f"1answer:{option}:{suffix}:{index}:{score}:{subject_name}"
                 )
             )
         keyboard.append(row)
@@ -143,7 +143,7 @@ async def force_finish(message_or_callback, state: FSMContext):
     await state.clear()
 
 
-@check_router.callback_query(F.data.startswith("answer:"))
+@check_router.callback_query(F.data.startswith("1answer:"))
 async def handle_answer(callback: CallbackQuery, state: FSMContext):
     data = callback.data.split(":")
     is_correct = data[2]
