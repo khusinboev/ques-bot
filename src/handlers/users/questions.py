@@ -89,12 +89,14 @@ async def start_subject(message: Message, state: FSMContext, table_name: str, su
     cursor.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='active'")
     variants = cursor.fetchall()
     if not variants:
+        print(variants)
         await message.answer("Fan uchun variantlar topilmadi.")
         return
     selected_variant = random.choice([v[0] for v in variants])
     cursor.execute(f"SELECT photo, answer FROM {table_name} WHERE varyant=? AND status='active'", (selected_variant,))
     questions = cursor.fetchall()
     if len(questions) < 10:
+        print(questions)
         await message.answer("Yetarlicha test mavjud emas.")
         return
 
