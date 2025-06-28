@@ -89,8 +89,8 @@ async def cancel_test_start(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await callback.message.answer(
         "<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
-        "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlari</b>ga muvofiq <b>majburiy fanlar</b>dan test ishlashingiz mumkin. \n\n"
-        "@BMB_testbot oraqali\n"
+        "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlariga</b>ga muvofiq <b>majburiy fanlar</b>dan tayyorgarlik ko'rishingiz mumkin. \n\n"
+        "<b>@BMB_testbot orqali:</b>\n"
         "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
         "✅ Kirish imtihonlariga tayyorgarlik;\n"
         "✅ Bilimni baholash imkoniyati mavjud.\n\n"
