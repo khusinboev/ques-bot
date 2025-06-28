@@ -239,4 +239,4 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
 async def stop_quiz(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.delete()
-    await handle_user_status(callback, callback.from_user.id)
+    await handle_user_status(callback.message, callback.from_user.id)
