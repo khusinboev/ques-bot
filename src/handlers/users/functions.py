@@ -22,7 +22,7 @@ def format_results(user_id: int) -> str:
     fanlar = {
         "math": "📘 Matematika",
         "literature": "📗 Ona tili",
-        "history": "📙 Tarix"
+        "history": "📙 O‘zbekiston tarixi"
     }
 
     matn = "<b>📊 So‘nggi test natijalaringiz:</b>\n\n"
