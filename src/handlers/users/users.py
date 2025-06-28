@@ -8,6 +8,7 @@ from aiogram.types import (
 )
 
 from config import sql, bot, ADMIN_ID, cursor, conn, dp
+from src.handlers.users.functions import format_results
 from src.keyboards.buttons import UserPanels
 from src.keyboards.keyboard_func import CheckData
 
@@ -125,6 +126,13 @@ async def update_images(message: Message):
             await sent.delete()
             time.sleep(0.1)
     await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
+
+
+@user_router.message(F.text == "📊Natijalarim")
+async def natijalarim_handler(message: Message):
+    user_id = message.from_user.id
+    matn = format_results(user_id)
+    await message.answer(matn)
 
 
 # @user_router.message(F.text == "kepataqoy")

@@ -133,6 +133,9 @@ class UserPanels:
                 [
                     KeyboardButton(text="📚 Tarix"),
                     KeyboardButton(text="🧮 Hamasidan"),
+                ],
+                [
+                    KeyboardButton(text="📊Natijalarim")
                 ]
             ],
             resize_keyboard=True,

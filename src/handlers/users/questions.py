@@ -10,7 +10,7 @@ from aiogram.types import (
     CallbackQuery, BufferedInputFile, InputMediaPhoto, ReplyKeyboardRemove
 )
 
-from config import cursor, sql, bot
+from config import cursor, sql, bot, conn
 from src.keyboards.buttons import UserPanels
 from src.keyboards.keyboard_func import CheckData
 
@@ -261,12 +261,25 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         result = "✅ Test yakunlandi!\n"
         for subject, info in state_data["subject_stats"].items():
             result += f"\n📘 {subject}: {info['correct']} ta to‘g‘ri | {round(info['score'], 1)} ball"
+            insert_result(user_id=callback.from_user.id, subject={"Ona tili":"literature","Matematika":"math", "O‘zbekiston tarixi":"history"}[subject], number=info['correct'])
         result += f"\n\nUmumiy: {int((score + 0.01) // 1.1)} ta to‘g‘ri | {round(score, 1)} ball"
         result += f"\n⏳ {elapsed // 60} daqiqa {elapsed % 60} soniyada yakunlandi"
 
         await callback.message.answer(result, reply_markup=await UserPanels.ques_manu())
         await callback.message.delete()
         await state.clear()
+
+def insert_result(user_id: int, subject: str, number: int):
+    subject = subject.lower()
+    if subject not in ["math", "literature", "history"]:
+        raise ValueError("Noto‘g‘ri fan nomi!")
+
+    query = f"""
+        INSERT INTO results (user_id, {subject}, number)
+        VALUES (%s, TRUE, %s)
+    """
+    cursor.execute(query, (user_id, number))
+    conn.commit()
 
 
 @ques_router.callback_query(F.data == "stop-quest")

@@ -66,6 +66,18 @@ async def create_all_base():
     """)
     db.commit()
 
+    sql.execute("""CREATE TABLE IF NOT EXISTS results (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    math BOOLEAN DEFAULT FALSE,
+    literature BOOLEAN DEFAULT FALSE,
+    history BOOLEAN DEFAULT FALSE,
+    number INTEGER DEFAULT 0,
+    finished_at TIMESTAMP DEFAULT NOW()
+);
+""")
+    db.commit()
+
 
 class Authenticator:
     @staticmethod

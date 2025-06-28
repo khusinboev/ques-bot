@@ -11,6 +11,7 @@ from aiogram.types import (
 )
 
 from config import sql, db, bot
+from src.handlers.users.questions import insert_result
 from src.handlers.users.users import handle_user_status
 from src.keyboards.buttons import UserPanels
 from src.keyboards.keyboard_func import CheckData
@@ -186,6 +187,9 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         result = "✅ Test yakunlandi!\n"
         for subject, info in state_data["subject_stats"].items():
             result += f"\n📘 {subject}: {info['correct']} ta to‘g‘ri | {round(info['score'], 1)} ball"
+            insert_result(user_id=callback.from_user.id,
+                          subject={"Ona tili": "literature", "Matematika": "math", "O‘zbekiston tarixi": "history"}[
+                              subject], number=info['correct'])
         result += f"\n\nUmumiy: {int((score + 0.01) // 1.1)} ta to‘g‘ri | {round(score, 1)} ball"
         result += f"\n⏳ {elapsed // 60} daqiqa {elapsed % 60} soniyada yakunlandi"
 
