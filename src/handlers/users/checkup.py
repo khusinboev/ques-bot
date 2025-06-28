@@ -128,8 +128,8 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
         await message_or_callback.answer_photo(photo=photo, caption=caption, reply_markup=btn, parse_mode="HTML")
     else:
         try:
-            await message_or_callback.message.edit_media(
-                InputMediaPhoto(media=photo, caption=caption, parse_mode="HTML"))
+            await message_or_callback.message.edit_media(media=photo)
+            await message_or_callback.message.edit_caption(media=caption, parse_mode="HTML")
             await message_or_callback.message.edit_reply_markup(reply_markup=btn)
         except:
             pass
