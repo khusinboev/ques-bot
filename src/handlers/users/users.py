@@ -16,7 +16,7 @@ user_router = Router()
 
 WELCOME_TEXT = (
     "<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
-    "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlariga</b>ga muvofiq <b>majburiy fanlar</b>dan tayyorgarlik ko'rishingiz mumkin. \n\n"
+    "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlariga</b> muvofiq <b>majburiy fanlar</b>dan tayyorgarlik ko'rishingiz mumkin. \n\n"
     "<b>@BMB_testbot orqali:</b>\n"
     "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
     "✅ Kirish imtihonlariga tayyorgarlik;\n"
