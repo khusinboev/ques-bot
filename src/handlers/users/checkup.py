@@ -11,6 +11,7 @@ from aiogram.types import (
 )
 
 from config import sql, db, bot
+from src.handlers.users.users import handle_user_status
 from src.keyboards.buttons import UserPanels
 from src.keyboards.keyboard_func import CheckData
 
@@ -87,21 +88,7 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
 @check_router.callback_query(F.data == "cancel-mandatory-test")
 async def cancel_test_start(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
-    await callback.message.answer(
-        "<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
-        "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlariga</b>ga muvofiq <b>majburiy fanlar</b>dan tayyorgarlik ko'rishingiz mumkin. \n\n"
-        "<b>@BMB_testbot orqali:</b>\n"
-        "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
-        "✅ Kirish imtihonlariga tayyorgarlik;\n"
-        "✅ Bilimni baholash imkoniyati mavjud.\n\n"
-        "<b>♻️ Abituriyent do'stlaringizga ulashing!</b>",
-        parse_mode="HTML"
-    )
-    await callback.message.answer(
-        "<b>Kerakli bo'limni tanlang👇</b>",
-        parse_mode="HTML",
-        reply_markup=await UserPanels.chance_manu()
-    )
+    await handle_user_status(callback, callback.from_user.id)
 
 
 async def show_question(message_or_callback, question, index, score, state: FSMContext):
@@ -235,28 +222,4 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
 async def stop_quiz(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.delete()
-    user_id = callback.message.from_user.id
-    sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id, ))
-    result = sql.fetchone()
-    try:
-        ready, chance = result
-        if ready is True:
-            await callback.message.answer(
-                "Tabriklaymiz! Sizga cheksiz test ishlash imkoniyati taqdim etildi!",
-                parse_mode="html",
-                reply_markup=await UserPanels.ques_manu()
-            )
-        elif chance and ready is False:
-            sql.execute("SELECT member FROM public.referal WHERE user_id=%s", (user_id,))
-            number = sql.fetchone()
-            await callback.message.answer("Botimizga xush kelibsiz", reply_markup=ReplyKeyboardRemove())
-            await callback.message.answer(
-                f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \nhttps://t.me/BMB_testbot?start={user_id}\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\nSiz {number[0]} ta odam taklif qildingiz, yana {3 - number[0]}ta odam taklif qilishingiz kerak",
-                parse_mode="html",
-                reply_markup=await CheckData.share_link(user_id))
-        elif chance is False:
-            await callback.message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
-        print("bera")
-    except Exception as e:
-        print(e)
-        await callback.message.answer("/start")
+    await handle_user_status(callback, callback.from_user.id)
