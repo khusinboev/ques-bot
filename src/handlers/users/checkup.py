@@ -31,8 +31,7 @@ class FormQues(StatesGroup):
 @check_router.message(F.text == "📚 Majburiy blokdan test ishlash")
 async def show_start_buttons(message: Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="▶️ Boshlash", callback_data="start-mandatory-test")],
-        [InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel-mandatory-test")]
+        [InlineKeyboardButton(text="▶️ Boshlash", callback_data="start-mandatory-test")]
     ])
     await message.answer("📝 Majburiy fanlardan test ishlashni boshlash uchun quyidagi tugmalardan birini tanlang:", reply_markup=keyboard)
 
@@ -85,12 +84,9 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
     })
     await callback.message.delete()
     await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
+    print(selected_all[0])
     await show_question(callback, selected_all[0], 0, 0.0, state)
 
-@check_router.callback_query(F.data == "cancel-mandatory-test")
-async def cancel_test_start(callback: CallbackQuery, state: FSMContext):
-    await callback.message.delete()
-    await handle_user_status(callback, callback.from_user.id)
 
 
 async def show_question(message_or_callback, question, index, score, state: FSMContext):
