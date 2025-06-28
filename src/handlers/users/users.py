@@ -49,7 +49,15 @@ async def start_cmd1(message: Message):
                 parse_mode="html",
                 reply_markup=await CheckData.share_link(user_id))
         elif chance is False:
-            await message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
+            await message.answer("<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
+                                 "Ush bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlari</b>ga muvofiq <b>majburiy fanlar</b>dan test ishlashingiz mumkin. \n\n"
+                                 "@BMB_testbot oraqali\n"
+                                 "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
+                                 "✅ Kirish imtihonlariga tayyorgarlik;\n"
+                                 "✅ Bilimni baholash imkoniyati mavjud.\n\n"
+                                 "<b>♻️ Abituriyent do'stlaringizga ulashing!</b>", parse_mode="HTML")
+            await message.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
+                                 reply_markup=await UserPanels.chance_manu())
 
 @user_router.callback_query(F.data == "check", F.message.chat.type == ChatType.PRIVATE)
 async def check(call: CallbackQuery):
@@ -90,7 +98,15 @@ async def check(call: CallbackQuery):
                         parse_mode="html",
                         reply_markup=await CheckData.share_link(user_id))
                 elif chance is False:
-                    await call.message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
+                    await call.message.answer("<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
+                                         "Ush bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlari</b>ga muvofiq <b>majburiy fanlar</b>dan test ishlashingiz mumkin. \n\n"
+                                         "@BMB_testbot oraqali\n"
+                                         "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
+                                         "✅ Kirish imtihonlariga tayyorgarlik;\n"
+                                         "✅ Bilimni baholash imkoniyati mavjud.\n\n"
+                                         "<b>♻️ Abituriyent do'stlaringizga ulashing!</b>", parse_mode="HTML")
+                    await call.message.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
+                                         reply_markup=await UserPanels.chance_manu())
             try:
                 await call.answer()
             except:
@@ -164,7 +180,14 @@ async def start_with_ref(message: Message, command: CommandObject):
                 parse_mode="html",
                 reply_markup=await CheckData.share_link(user_id))
         elif chance is False:
-            await message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
+            await message.answer("<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
+                                 "Ush bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlari</b>ga muvofiq <b>majburiy fanlar</b>dan test ishlashingiz mumkin. \n\n"
+                                 "@BMB_testbot oraqali\n"
+                                 "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
+                                 "✅ Kirish imtihonlariga tayyorgarlik;\n"
+                                 "✅ Bilimni baholash imkoniyati mavjud.\n\n"
+                                 "<b>♻️ Abituriyent do'stlaringizga ulashing!</b>", parse_mode="HTML")
+            await message.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML", reply_markup=await UserPanels.chance_manu())
 
 
 # @user_router.message(F.text == "kepataqoy")
