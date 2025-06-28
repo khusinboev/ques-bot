@@ -225,6 +225,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
                 reply_markup=btn
             )
         except Exception as e:
+            print(photo)
             print(f"[edit error] {e}")
         await message_or_callback.answer()
 
@@ -281,7 +282,9 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         result += f"\n⏳ {elapsed // 60} daqiqa {elapsed % 60} soniyada yakunlandi"
 
         await callback.message.answer(result, reply_markup=await UserPanels.ques_manu())
-        await callback.message.delete()
+        try:
+            await callback.message.delete()
+        except: pass
         await state.clear()
 
 def insert_result(user_id: int, subject: str, number: int):

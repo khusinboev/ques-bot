@@ -206,7 +206,10 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         result += f"\n⏳ {elapsed // 60} daqiqa {elapsed % 60} soniyada yakunlandi"
 
         await callback.message.answer(result, reply_markup=await UserPanels.ques_manu())
-        await callback.message.delete()
+        try:
+            await callback.message.delete()
+        except:
+            pass
         await state.clear()
         user_id = callback.message.from_user.id
         sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
