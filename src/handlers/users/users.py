@@ -132,7 +132,7 @@ async def update_images(message: Message):
 async def natijalarim_handler(message: Message):
     user_id = message.from_user.id
     matn = format_results(user_id)
-    await message.answer(matn)
+    await message.answer(matn, parse_mode="html")
 
 
 # @user_router.message(F.text == "kepataqoy")
