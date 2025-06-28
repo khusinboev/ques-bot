@@ -14,15 +14,19 @@ from src.keyboards.keyboard_func import CheckData
 
 user_router = Router()
 
-WELCOME_TEXT = (
+WELCOME_TEXT_1 = (
     "<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
-    "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlariga</b>ga muvofiq <b>majburiy fanlar</b>dan tayyorgarlik ko'rishingiz mumkin. \n\n"
+    "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlariga</b> muvofiq <b>majburiy fanlar</b>dan tayyorgarlik ko'rishingiz mumkin. \n\n"
+)
+
+WELCOME_TEXT_2 = (
     "<b>@BMB_testbot orqali:</b>\n"
     "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
     "✅ Kirish imtihonlariga tayyorgarlik;\n"
     "✅ Bilimni baholash imkoniyati mavjud.\n\n"
     "<b>♻️ Abituriyent do'stlaringizga ulashing!</b>"
 )
+
 
 async def handle_user_status(message_or_call, user_id, is_callback=False):
     sql.execute("SELECT member, ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
@@ -42,7 +46,9 @@ async def handle_user_status(message_or_call, user_id, is_callback=False):
         conn.commit()
 
     if ready:
-        await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
+        await message_or_call.answer(WELCOME_TEXT_1, parse_mode="HTML")
+        await message_or_call.answer(WELCOME_TEXT_2, parse_mode="HTML")
+
         await message_or_call.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
                                      reply_markup=await UserPanels.ques_manu())
     elif chance:
@@ -54,7 +60,8 @@ async def handle_user_status(message_or_call, user_id, is_callback=False):
             parse_mode="HTML",
             reply_markup=await CheckData.share_link(user_id))
     else:
-        await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
+        await message_or_call.answer(WELCOME_TEXT_1, parse_mode="HTML")
+        await message_or_call.answer(WELCOME_TEXT_2, parse_mode="HTML")
         await message_or_call.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
                                      reply_markup=await UserPanels.chance_manu())
 
