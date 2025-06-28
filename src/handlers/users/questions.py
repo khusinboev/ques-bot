@@ -191,11 +191,11 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
             row.append(
                 InlineKeyboardButton(
                     text=option,
-                    callback_data=f"1answer:{option}:{suffix}:{index}:{score}:{subject_name}"
+                    callback_data=f"answer:{option}:{suffix}:{index}:{score}:{subject_name}"
                 )
             )
         keyboard.append(row)
-    keyboard.append([InlineKeyboardButton(text="⛔ To‘xtatish", callback_data="stop-checkup")])
+    keyboard.append([InlineKeyboardButton(text="⛔ To‘xtatish", callback_data="stop-quest")])
     btn = InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     caption = (
@@ -227,7 +227,6 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
         except Exception as e:
             print(f"[edit error] {e}")
         await message_or_callback.answer()
-
 
 
 async def force_finish(message_or_callback, state: FSMContext):
