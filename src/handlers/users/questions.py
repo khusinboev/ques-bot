@@ -65,7 +65,7 @@ async def start_all_subjects(message: Message, state: FSMContext):
         except:
             pass
 
-        subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "Tarix")]
+        subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "O‘zbekiston tarixi")]
         selected_all = []
         stats = {}
 
