@@ -10,9 +10,9 @@ from aiogram.types import (
     CallbackQuery, BufferedInputFile, InputMediaPhoto, ReplyKeyboardRemove
 )
 
-from config import sql, db, bot
+from config import sql, db, bot, cursor, conn
 from src.handlers.users.questions import insert_result
-from src.handlers.users.users import handle_user_status
+from src.handlers.users.users import WELCOME_TEXT
 from src.keyboards.buttons import UserPanels
 from src.keyboards.keyboard_func import CheckData
 
@@ -234,9 +234,42 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
             print(e)
             await callback.message.answer("/start")
 
+async def handle_user_status2(message_or_call, user_id, is_callback=False):
+    sql.execute("SELECT member, ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
+    result = sql.fetchone()
+    if not result:
+        return
+
+    member, ready, chance = result
+    if member >= 3:
+        cursor.execute("UPDATE referal SET ready=TRUE WHERE user_id = %s", (user_id,))
+        conn.commit()
+
+    cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))
+    is_start = cursor.fetchone()[0]
+    if is_start:
+        cursor.execute("UPDATE referal SET starter = FALSE WHERE user_id = %s", (user_id,))
+        conn.commit()
+
+    if ready:
+        await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
+        await message_or_call.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
+                                     reply_markup=await UserPanels.ques_manu())
+    elif chance:
+        await message_or_call.answer(
+            f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b>\n"
+            f"https://t.me/BMB_testbot?start={user_id}\n\n"
+            f"Eslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> va <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\n"
+            f"Siz {member} ta odam taklif qildingiz, yana {3 - member} ta odam taklif qilishingiz kerak",
+            parse_mode="HTML",
+            reply_markup=await CheckData.share_link(user_id))
+    else:
+        await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
+        await message_or_call.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
+                                     reply_markup=await UserPanels.chance_manu())
 
 @check_router.callback_query(F.data == "stop-checkup")
 async def stop_quiz(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.delete()
-    await handle_user_status(callback.message, callback.from_user.id)
+    await handle_user_status2(callback.message, callback.from_user.id)
