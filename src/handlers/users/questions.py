@@ -25,38 +25,63 @@ class FormQues(StatesGroup):
     subject_stats = State()  # dict: {subject: {'correct': int, 'score': float}}
     start_time = State()
 
+# Fan boshlash tugmalari
+def confirm_test_btn(subject_code: str, subject_name: str):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Boshlash", callback_data=f"confirm_start:{subject_code}:{subject_name}")],
+        [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back-to-menu")]
+    ])
 
 @ques_router.message(F.text == "📝 Matematika️")
-async def start_math(message: Message, state: FSMContext):
-    check_status, channels = await CheckData.check_member(bot, message.from_user.id)
-    if check_status:
-        await start_subject(message, state, "math", "Matematika", duration=20 * 60)
-    else:
-        await message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
-                             reply_markup=await CheckData.channels_btn(channels))
-
+async def choose_math(message: Message):
+    await message.answer("📝 Matematika fanidan testni boshlashni xohlaysizmi?",
+                         reply_markup=confirm_test_btn("math", "Matematika"))
 
 @ques_router.message(F.text == "📚 Ona tili")
-async def start_literature(message: Message, state: FSMContext):
-    check_status, channels = await CheckData.check_member(bot, message.from_user.id)
-    if check_status:
-        await start_subject(message, state, "literature", "Ona tili", duration=20 * 60)
-    else:
-        await message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
-                             reply_markup=await CheckData.channels_btn(channels))
-
+async def choose_literature(message: Message):
+    await message.answer("📚 Ona tili fanidan testni boshlashni xohlaysizmi?",
+                         reply_markup=confirm_test_btn("literature", "Ona tili"))
 
 @ques_router.message(F.text == "📚 Tarix")
-async def start_history(message: Message, state: FSMContext):
-    check_status, channels = await CheckData.check_member(bot, message.from_user.id)
-    if check_status:
-        await start_subject(message, state, "history", "O‘zbekiston tarixi", duration=20 * 60)
-    else:
-        await message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
-                             reply_markup=await CheckData.channels_btn(channels))
-
+async def choose_history(message: Message):
+    await message.answer("📚 O‘zbekiston tarixi fanidan testni boshlashni xohlaysizmi?",
+                         reply_markup=confirm_test_btn("history", "O‘zbekiston tarixi"))
 
 @ques_router.message(F.text == "🧮 Hamasidan")
+async def choose_all_subjects(message: Message):
+    await message.answer("🧮 3 ta fandan umumiy testni boshlashni xohlaysizmi?",
+                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                             [InlineKeyboardButton(text="✅ Boshlash", callback_data="confirm_start:all:all")],
+                             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back-to-menu")]
+                         ]))
+
+
+@ques_router.callback_query(F.data.startswith("confirm_start:"))
+async def confirm_start_test(callback: CallbackQuery, state: FSMContext):
+    _, subject_code, subject_name = callback.data.split(":")
+
+    check_status, channels = await CheckData.check_member(bot, callback.from_user.id)
+    if not check_status:
+        await callback.message.edit_text(
+            "❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
+            reply_markup=await CheckData.channels_btn(channels)
+        )
+        return
+
+    if subject_code == "all":
+        await start_all_subjects(callback.message, state)
+    else:
+        await start_subject(callback.message, state, subject_code, subject_name, duration=20 * 60)
+
+
+@ques_router.callback_query(F.data == "back-to-menu")
+async def back_to_menu(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await callback.message.answer(
+        "📚 Majburiy fanlardan test ishlash bo‘limiga qaytdingiz, kerakli fanni tanlang.",
+        reply_markup=await UserPanels.ques_manu()
+    )
+
 async def start_all_subjects(message: Message, state: FSMContext):
     check_status, channels = await CheckData.check_member(bot, message.from_user.id)
     if check_status:
