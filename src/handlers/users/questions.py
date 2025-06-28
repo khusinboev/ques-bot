@@ -63,7 +63,7 @@ async def confirm_start_test(callback: CallbackQuery, state: FSMContext):
     check_status, channels = await CheckData.check_member(bot, callback.from_user.id)
     if not check_status:
         await callback.message.delete()
-        await callback.message.edit_text(
+        await callback.message.answer(
             "❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
             reply_markup=await CheckData.channels_btn(channels)
         )
