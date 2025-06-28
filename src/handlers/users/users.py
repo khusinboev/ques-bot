@@ -44,8 +44,8 @@ async def start_cmd1(message: Message):
         elif chance and ready is False:
             sql.execute("SELECT member FROM public.referal WHERE user_id=%s", (user_id,))
             number = sql.fetchone()
-            await message.answer(
-                f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \nhttps://t.me/BMB_testbot?start={user_id}\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\nSiz {number} ta odam taklif qildingiz, yana {3 - number}ta odam taklif qilishingiz kerak",
+            await call.message.answer(
+                f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \nhttps://t.me/BMB_testbot?start={user_id}\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\nSiz {number[0]} ta odam taklif qildingiz, yana {3 - number[0]}ta odam taklif qilishingiz kerak",
                 parse_mode="html",
                 reply_markup=await CheckData.share_link(user_id))
         elif chance is False:
@@ -86,7 +86,7 @@ async def check(call: CallbackQuery):
                     sql.execute("SELECT member FROM public.referal WHERE user_id=%s", (user_id,))
                     number = sql.fetchone()
                     await call.message.answer(
-                        f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \nhttps://t.me/BMB_testbot?start={user_id}\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\nSiz {number} ta odam taklif qildingiz, yana {3 - number}ta odam taklif qilishingiz kerak",
+                        f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \nhttps://t.me/BMB_testbot?start={user_id}\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\nSiz {number[0]} ta odam taklif qildingiz, yana {3 - number[0]}ta odam taklif qilishingiz kerak",
                         parse_mode="html",
                         reply_markup=await CheckData.share_link(user_id))
                 elif chance is False:
