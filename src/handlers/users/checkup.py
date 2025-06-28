@@ -125,6 +125,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
         f"⏱ O‘tgan vaqt: {time_elapsed // 60} daqiqa {time_elapsed % 60} soniya | Qolgan: {time_left // 60} daq. {time_left % 60} son.")
 
     if isinstance(message_or_callback, Message):
+        print("message_or_callback")
         await message_or_callback.answer_photo(photo=photo, caption=caption, reply_markup=btn, parse_mode="HTML")
     else:
         try:
