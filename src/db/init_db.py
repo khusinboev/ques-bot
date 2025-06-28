@@ -20,7 +20,7 @@ async def create_all_base():
         title character varying,
         username character varying,
         types character varying,
-        status BOOLEAN DEFAULT,
+        status BOOLEAN DEFAULT FALSE,
         CONSTRAINT channels_pkey PRIMARY KEY (id)
     )""")
     db.commit()
