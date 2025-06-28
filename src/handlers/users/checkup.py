@@ -35,7 +35,7 @@ async def start_all_subjects(message: Message, state: FSMContext):
         if sql.fetchone():
             sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
             db.commit()
-        subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "Tarix")]
+        subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "O‘zbekiston tarixi")]
         selected_all = []
         stats = {}
 
