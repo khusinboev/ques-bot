@@ -50,7 +50,7 @@ async def start_literature(message: Message, state: FSMContext):
 async def start_history(message: Message, state: FSMContext):
     check_status, channels = await CheckData.check_member(bot, message.from_user.id)
     if check_status:
-        await start_subject(message, state, "history", "Tarix", duration=20 * 60)
+        await start_subject(message, state, "history", "O‘zbekiston tarixi", duration=20 * 60)
     else:
         await message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
                              reply_markup=await CheckData.channels_btn(channels))
