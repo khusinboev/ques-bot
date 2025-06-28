@@ -7,14 +7,14 @@ from aiogram.exceptions import AiogramError
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, KeyboardButton as RButton, \
-    KeyboardButtonRequestChat, ChatInviteLink, CallbackQuery
+    KeyboardButtonRequestChat, ChatInviteLink
 from aiogram.enums import ChatType
 from aiogram.fsm.state import StatesGroup, State
 from dateutil.relativedelta import relativedelta
 
 from src.keyboards.buttons import AdminPanel
-from config import sql, ADMIN_ID, DB_CONFIG, bot, db
-from src.keyboards.keyboard_func import PanelFunc, AdminFilter, status_keyboard
+from config import sql, ADMIN_ID, DB_CONFIG, bot
+from src.keyboards.keyboard_func import PanelFunc, AdminFilter
 
 admin_router = Router()
 
@@ -219,33 +219,10 @@ async def channel_add1(message: Message, state: FSMContext):
         await PanelFunc.channel_add(channel_id, link)
         await state.clear()
         await message.reply("Kanal qo'shildi🎉🎉", reply_markup=await AdminPanel.admin_channel())
-
-        # ✅ Status tanlash uchun tugmalar
-        await message.answer(
-            "Kanal statusini tanlang:",
-            reply_markup=status_keyboard(channel_id)
-        )
     else:
         await message.answer(
             "Kanal taklif havolasini yuboring. U https://t.me/+ deb boshlanadi. Buni kanal havolalari bo'limida yaratasiz.",
             reply_markup=markup)
-
-@admin_router.callback_query(F.data.startswith("status_"))
-async def handle_status_change(call: CallbackQuery):
-    action, ch_id = call.data.split(":")
-    channel_id = int(ch_id)
-
-    if action == "status_true":
-        sql.execute("UPDATE public.mandatorys SET status = TRUE WHERE chat_id = %s", (channel_id,))
-        db.commit()
-        await call.message.edit_text("✅ Kanal statusi: Tekshiriladi")
-    elif action == "status_false":
-        sql.execute("UPDATE public.mandatorys SET status = FALSE WHERE chat_id = %s", (channel_id,))
-        db.commit()
-        await call.message.edit_text("❌ Kanal statusi: Tekshirilmaydi")
-    else:
-        await call.answer("Noma'lum amal!", show_alert=True)
-
 
 
 @admin_router.message(F.text == "❌Kanalni olib tashlash", F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))

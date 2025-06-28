@@ -21,23 +21,20 @@ class CheckData:
 
     @staticmethod
     async def check_member(bot: Bot, user_id: int):
-        sql.execute("SELECT chat_id, status FROM public.mandatorys")
-        mandatory, status = sql.fetchall()
+        sql.execute("SELECT chat_id FROM public.mandatorys")
+        mandatory = sql.fetchall()
         if not mandatory:
             return True, []
 
         channels = []
         for chat_id in mandatory:
-            if status[mandatory.index(chat_id)][0]:
-                try:
-                    r = await bot.get_chat_member(chat_id=chat_id[0], user_id=user_id)
-                    if r.status == "left" and user_id not in ADMIN_ID:
-                        channels.append(chat_id[0])
-                    print(channels)
-                except Exception as e:
-                    print(f"Xatolik: {e}")
-            else:
-                channels.append(chat_id[0])
+            try:
+                r = await bot.get_chat_member(chat_id=chat_id[0], user_id=user_id)
+                if r.status == "left" and user_id not in ADMIN_ID:
+                    channels.append(chat_id[0])
+                print(channels)
+            except Exception as e:
+                print(f"Xatolik: {e}")
         return (len(channels) == 0), channels
 
     @staticmethod
@@ -70,11 +67,10 @@ class PanelFunc:
 
     @staticmethod
     async def channel_list():
-        sql.execute("SELECT chat_id, username, status from public.mandatorys")
+        sql.execute("SELECT chat_id, username from public.mandatorys")
         str = ''
-        for row, status in sql.fetchall():
+        for row in sql.fetchall():
             chat_id = row[0]
-            username = row[1]
             try:
                 all_details = await bot.get_chat(chat_id=chat_id)
                 title = all_details.title
@@ -83,7 +79,7 @@ class PanelFunc:
                 info = all_details.description
                 str += f"------------------------------------------------\nKanal useri: > @{all_details.username}\nKamal nomi: > {title}\nKanal id si: > {channel_id}\nKanal haqida: > {info}\n"
             except Exception as e:
-                str += f"------------------------------------------------\nKanal useri: > @{username}\nKanal id si: > {chat_id}\n"
+                str += f"Kanalni admin qiling\n\nError: {e}"
         return str
 
     @staticmethod
@@ -110,14 +106,6 @@ class PanelFunc:
             except Exception as e:
                 str += f"xatolik:\n" + f"🔹 ID: <code>{chat_id}</code>\n\n"
         return str
-
-def status_keyboard(channel_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="✅ Tekshirish", callback_data=f"status_true:{channel_id}"),
-            InlineKeyboardButton(text="❌ Tekshirmaslik", callback_data=f"status_false:{channel_id}")
-        ]
-    ])
 
 
 class AdminFilter(BaseFilter):
