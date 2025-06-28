@@ -15,13 +15,13 @@ from src.keyboards.keyboard_func import CheckData
 user_router = Router()
 
 WELCOME_TEXT = (
-    "<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
-    "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlariga</b> muvofiq <b>majburiy fanlar</b>dan tayyorgarlik ko'rishingiz mumkin. \n\n"
-    "<b>@BMB_testbot orqali:</b>\n"
-    "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
-    "✅ Kirish imtihonlariga tayyorgarlik;\n"
-    "✅ Bilimni baholash imkoniyati mavjud.\n\n"
-    "<b>♻️ Abituriyent do'stlaringizga ulashing!</b>"
+    "<b>Assalomu alaykum! Botimizga xush kelibsiz!</b>\n\n"
+    "Ushbu bot orqali oliy taʼlim muassasalariga kirish imtihonlariga Bilimni baholash agentligi standartlariga muvofiq <b>majburiy fanlardan tayyorgarlik</b> koʻrishingiz mumkin. \n\n"
+    "<b>@BMB_testbot orqali siz:</b>\n"
+    "✅ Majburiy fanlardagi bilim va koʻnikmalaringizni oshirishingiz;\n"
+    "✅ Kirish imtihonlariga sifatli tayyorgarlik koʻrishingiz;\n"
+    "✅ Bilimingizni objektiv baholash imkoniyatiga ega boʻlishingiz mumkin.\n\n"
+    "<b>♻️ Doʻstlaringizga ham ulashing – abituriyentlar uchun foydali boʻladi!</b>"
 )
 
 async def handle_user_status(message_or_call, user_id, is_callback=False):
