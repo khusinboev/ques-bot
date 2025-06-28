@@ -174,6 +174,31 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer(result, reply_markup=await UserPanels.ques_manu())
         await callback.message.delete()
         await state.clear()
+        user_id = callback.message.from_user.id
+        sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
+        result = sql.fetchone()
+        try:
+            ready, chance = result
+            if ready is True:
+                await callback.message.answer(
+                    "Tabriklaymiz! Sizga cheksiz test ishlash imkoniyati taqdim etildi!",
+                    parse_mode="html",
+                    reply_markup=await UserPanels.ques_manu()
+                )
+            elif chance and ready is False:
+                sql.execute("SELECT member FROM public.referal WHERE user_id=%s", (user_id,))
+                number = sql.fetchone()
+                await callback.message.answer("Botimizga xush kelibsiz", reply_markup=ReplyKeyboardRemove())
+                await callback.message.answer(
+                    f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \n<code>https://t.me/BMB_testbot?start={user_id}</code>\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\nSiz {number} ta odam taklif qildingiz, yana {3 - number}ta odam taklif qilishingiz kerak",
+                    parse_mode="html",
+                    reply_markup=await CheckData.share_link(user_id))
+            elif chance is False:
+                await callback.message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
+            print("bera")
+        except Exception as e:
+            print(e)
+            await callback.message.answer("/start")
 
 
 @check_router.callback_query(F.data == "stop-checkup")
@@ -202,5 +227,6 @@ async def stop_quiz(callback: CallbackQuery, state: FSMContext):
         elif chance is False:
             await callback.message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
         print("bera")
-    except:
+    except Exception as e:
+        print(e)
         await callback.message.answer("/start")
