@@ -257,6 +257,12 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
 
     state_data = await state.get_data()
     end_time = state_data.get("end_time")
+    if end_time is None:
+        try:
+            await callback.message.delete()
+        except: pass
+        await callback.message.answer("Eski so'rov bo'lishi mumkin!", reply_markup=await UserPanels.ques_manu())
+        return
     if asyncio.get_event_loop().time() > end_time:
         await force_finish(callback, state)
         return
