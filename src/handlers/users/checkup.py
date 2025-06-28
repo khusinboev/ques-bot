@@ -27,51 +27,81 @@ class FormQues(StatesGroup):
 
 
 @check_router.message(F.text == "📚 Majburiy blokdan test ishlash")
-async def start_all_subjects(message: Message, state: FSMContext):
-    check_status, channels = await CheckData.check_member(bot, message.from_user.id)
-    if check_status:
-        user_id = message.from_user.id
-        sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
-        if sql.fetchone():
-            sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
-            db.commit()
-        subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "O‘zbekiston tarixi")]
-        selected_all = []
-        stats = {}
+async def show_start_buttons(message: Message):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="▶️ Boshlash", callback_data="start-mandatory-test")],
+        [InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel-mandatory-test")]
+    ])
+    await message.answer("📝 Majburiy fanlardan test ishlashni boshlash uchun quyidagi tugmalardan birini tanlang:", reply_markup=keyboard)
 
-        for table_name, subject_name in subjects:
-            sql.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
-            variants = sql.fetchall()
-            if not variants:
-                await message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
-                return
-            selected_v = random.choice([v[0] for v in variants])
-            sql.execute(f"SELECT file_id, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
-            questions = sql.fetchall()
-            if len(questions) < 10:
-                await message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
-                return
-            sample = random.sample(questions, 10)
-            selected_all.extend([(q[0], q[1], subject_name) for q in sample])
-            stats[subject_name] = {'correct': 0, 'score': 0.0}
+@check_router.callback_query(F.data == "start-mandatory-test")
+async def start_test_callback(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    check_status, channels = await CheckData.check_member(bot, user_id)
+    if not check_status:
+        await callback.message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
+                                      reply_markup=await CheckData.channels_btn(channels))
+        return
 
-        end_time = asyncio.get_event_loop().time() + 60 * 60
-        start_time = asyncio.get_event_loop().time()
+    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
+    if sql.fetchone():
+        sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
+        db.commit()
 
-        await state.set_data({
-            "ques_list": selected_all,
-            "current_index": 0,
-            "score": 0.0,
-            "total_questions": len(selected_all),
-            "end_time": end_time,
-            "subject_stats": stats,
-            "start_time": start_time
-        })
-        await message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
-        await show_question(message, selected_all[0], 0, 0.0, state)
-    else:
-        await message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
-                             reply_markup=await CheckData.channels_btn(channels))
+    subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "O‘zbekiston tarixi")]
+    selected_all = []
+    stats = {}
+
+    for table_name, subject_name in subjects:
+        sql.execute(f"SELECT DISTINCT varyant FROM {table_name} WHERE status='True'")
+        variants = sql.fetchall()
+        if not variants:
+            await callback.message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
+            return
+        selected_v = random.choice([v[0] for v in variants])
+        sql.execute(f"SELECT file_id, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
+        questions = sql.fetchall()
+        if len(questions) < 10:
+            await callback.message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
+            return
+        sample = random.sample(questions, 10)
+        selected_all.extend([(q[0], q[1], subject_name) for q in sample])
+        stats[subject_name] = {'correct': 0, 'score': 0.0}
+
+    end_time = asyncio.get_event_loop().time() + 60 * 60
+    start_time = asyncio.get_event_loop().time()
+
+    await state.set_data({
+        "ques_list": selected_all,
+        "current_index": 0,
+        "score": 0.0,
+        "total_questions": len(selected_all),
+        "end_time": end_time,
+        "subject_stats": stats,
+        "start_time": start_time
+    })
+    await callback.message.delete()
+    await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
+    await show_question(callback, selected_all[0], 0, 0.0, state)
+
+@check_router.callback_query(F.data == "cancel-mandatory-test")
+async def cancel_test_start(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await callback.message.answer(
+        "<b>Assalomu alaykum, botimizga xush kelibsiz!</b>\n\n"
+        "Ushbu bot orqali Oliy ta'lim muassasalariga kirish imtihonlariga <b>Bilimni baholash agentligi standardlari</b>ga muvofiq <b>majburiy fanlar</b>dan test ishlashingiz mumkin. \n\n"
+        "@BMB_testbot oraqali\n"
+        "✅ Majburiy fanlardan bilim va ko'nikmalarni oshirish;\n"
+        "✅ Kirish imtihonlariga tayyorgarlik;\n"
+        "✅ Bilimni baholash imkoniyati mavjud.\n\n"
+        "<b>♻️ Abituriyent do'stlaringizga ulashing!</b>",
+        parse_mode="HTML"
+    )
+    await callback.message.answer(
+        "<b>Kerakli bo'limni tanlang👇</b>",
+        parse_mode="HTML",
+        reply_markup=await UserPanels.chance_manu()
+    )
 
 
 async def show_question(message_or_callback, question, index, score, state: FSMContext):
