@@ -20,6 +20,7 @@ async def create_all_base():
         title character varying,
         username character varying,
         types character varying,
+        status BOOLEAN DEFAULT,
         CONSTRAINT channels_pkey PRIMARY KEY (id)
     )""")
     db.commit()
@@ -31,16 +32,6 @@ async def create_all_base():
         date TIMESTAMP DEFAULT now(),
         CONSTRAINT admins_pkey PRIMARY KEY (id)
     )""")
-    db.commit()
-
-    sql.execute("""
-    CREATE TABLE IF NOT EXISTS public.cinema(
-            cinema_id INTEGER NOT NULL,
-            cinema_name CHARACTER VARYING,
-            cinema_url CHARACTER VARYING,
-            date TIMESTAMP DEFAULT now(),
-            CONSTRAINT cinema_pkey PRIMARY KEY (cinema_id)
-        )""")
     db.commit()
 
     sql.execute("""
