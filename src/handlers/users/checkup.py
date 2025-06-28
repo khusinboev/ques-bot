@@ -94,6 +94,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
     total_questions = data.get("total_questions", 10)
     end_time = data.get("end_time")
     now = asyncio.get_event_loop().time()
+
     if now > end_time:
         await force_finish(message_or_callback, state)
         return
@@ -122,19 +123,33 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
     caption = (
         f"📖 FAN: <b>{subject_name}</b>\n"
         f"🧮 <b>Savol: {index + 1} / {total_questions}</b>\n"
-        f"⏱ O‘tgan vaqt: {time_elapsed // 60} daqiqa {time_elapsed % 60} soniya | Qolgan: {time_left // 60} daq. {time_left % 60} son.")
+        f"⏱ O‘tgan vaqt: {time_elapsed // 60} daqiqa {time_elapsed % 60} soniya | "
+        f"Qolgan: {time_left // 60} daq. {time_left % 60} son."
+    )
 
     if isinstance(message_or_callback, Message):
-        print("message_or_callback")
-        await message_or_callback.answer_photo(photo=photo, caption=caption, reply_markup=btn, parse_mode="HTML")
-    else:
+        # Foydalanuvchiga yangi savolni yuborish
+        await message_or_callback.answer_photo(
+            photo=photo,
+            caption=caption,
+            reply_markup=btn,
+            parse_mode="HTML"
+        )
+    elif isinstance(message_or_callback, CallbackQuery):
         try:
-            await message_or_callback.message.edit_media(media=photo)
-            await message_or_callback.message.edit_caption(media=caption, parse_mode="HTML")
-            await message_or_callback.message.edit_reply_markup(reply_markup=btn)
+            media = InputMediaPhoto(
+                media=photo,
+                caption=caption,
+                parse_mode="HTML"
+            )
+            await message_or_callback.message.edit_media(
+                media=media,
+                reply_markup=btn
+            )
         except Exception as e:
-            print(e)
+            print(f"[edit error] {e}")
         await message_or_callback.answer()
+
 
 
 async def force_finish(message_or_callback, state: FSMContext):
