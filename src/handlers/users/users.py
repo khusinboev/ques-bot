@@ -1,5 +1,5 @@
 import os
-import time
+import asyncio
 from aiogram import Router, F
 from aiogram.enums import ChatType
 from aiogram.filters import CommandStart, CommandObject
@@ -24,7 +24,15 @@ WELCOME_TEXT = (
     "<b>♻️ Doʻstlaringizga ham ulashing – abituriyentlar uchun foydali boʻladi!</b>"
 )
 
+async def ensure_user_in_referal(user_id: int):
+    cursor.execute("SELECT 1 FROM referal WHERE user_id = %s", (user_id,))
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO referal(user_id) VALUES (%s)", (user_id,))
+        conn.commit()
+
 async def handle_user_status(message_or_call, user_id, is_callback=False):
+    await ensure_user_in_referal(user_id)
+
     sql.execute("SELECT member, ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
     result = sql.fetchone()
     if not result:
@@ -81,30 +89,73 @@ async def start_with_ref(message: Message, command: CommandObject):
     referal_id = command.args
     user_id = message.from_user.id
 
-    if referal_id and str(user_id) != referal_id:
-        cursor.execute("SELECT 1 FROM referal WHERE user_id = %s", (user_id,))
-        if cursor.fetchone():
-            cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))
-            if cursor.fetchone()[0]:
-                cursor.execute("UPDATE referal SET starter = FALSE WHERE user_id = %s", (user_id,))
-                cursor.execute("UPDATE referal SET member = member + 1 WHERE user_id = %s", (referal_id,))
-                conn.commit()
+    await ensure_user_in_referal(user_id)
 
-                cursor.execute("SELECT member FROM referal WHERE user_id = %s", (referal_id,))
-                if cursor.fetchone()[0] >= 3:
-                    cursor.execute("UPDATE referal SET ready=TRUE WHERE user_id = %s", (referal_id,))
-                    conn.commit()
-                    try:
-                        await bot.send_message(chat_id=referal_id,
-                                               text="Tabriklaymiz! Sizga cheksiz test ishlash imkoniyati taqdim etildi!",
-                                               parse_mode="html",
-                                               reply_markup=await UserPanels.ques_manu())
-                    except:
-                        pass
+    if not referal_id or not referal_id.isdigit() or str(user_id) == referal_id:
+        return await handle_user_status(message, user_id)
+
+    referal_id = int(referal_id)
+
+    cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))
+    starter = cursor.fetchone()
+    if starter and starter[0]:
+        cursor.execute("UPDATE referal SET starter = FALSE WHERE user_id = %s", (user_id,))
+        cursor.execute("UPDATE referal SET member = member + 1 WHERE user_id = %s", (referal_id,))
+        conn.commit()
+
+        cursor.execute("SELECT member FROM referal WHERE user_id = %s", (referal_id,))
+        if cursor.fetchone()[0] >= 3:
+            cursor.execute("UPDATE referal SET ready = TRUE WHERE user_id = %s", (referal_id,))
+            conn.commit()
+            try:
+                await bot.send_message(chat_id=referal_id,
+                                       text="Tabriklaymiz! Sizga cheksiz test ishlash imkoniyati taqdim etildi!",
+                                       parse_mode="HTML",
+                                       reply_markup=await UserPanels.ques_manu())
+            except:
+                pass
 
     await handle_user_status(message, user_id)
 
-# Rasm fayllarni file_id ga yangilovchi funksiya
+@user_router.message(F.text == "📂 Referal jadvalini yaratish")
+async def create_referal_table(message: Message):
+    if message.from_user.id not in ADMIN_ID:
+        return await message.answer("⛔ Sizga ruxsat yo'q")
+
+    try:
+        sql.execute("""
+            CREATE TABLE IF NOT EXISTS public.referal (
+                user_id BIGINT UNIQUE NOT NULL,
+                chance BOOLEAN DEFAULT FALSE,
+                member BIGINT DEFAULT 0,
+                ready BOOLEAN DEFAULT FALSE,
+                starter BOOLEAN DEFAULT TRUE
+            )
+        """)
+        conn.commit()
+        await message.answer("✅ Referal jadvali yaratildi yoki allaqachon mavjud.")
+    except Exception as e:
+        await message.answer("❌ Jadval yaratishda xatolik.")
+        await bot.send_message(ADMIN_ID[0], f"[create_referal_table] Error:\n{e}")
+
+@user_router.message(F.text == "🔄 Referalni tiklash")
+async def reset_referal_data(message: Message):
+    user_id = message.from_user.id
+    try:
+        sql.execute("""
+            UPDATE referal SET
+                chance = FALSE,
+                member = 0,
+                ready = FALSE,
+                starter = TRUE
+            WHERE user_id = %s
+        """, (user_id,))
+        conn.commit()
+        await message.answer("✅ Sizning referal ma'lumotlaringiz asl holatga tiklandi.")
+    except Exception as e:
+        await message.answer("❌ Xatolik yuz berdi.")
+        await bot.send_message(ADMIN_ID[0], f"[reset_referal_data] Error:\n{e}")
+
 @user_router.message(F.text == "kepataqoy")
 async def update_images(message: Message):
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -124,53 +175,11 @@ async def update_images(message: Message):
             conn.commit()
             await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi. {idx}")
             await sent.delete()
-            time.sleep(0.1)
+            await asyncio.sleep(0.1)
     await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
-
 
 @user_router.message(F.text == "📊Natijalarim")
 async def natijalarim_handler(message: Message):
     user_id = message.from_user.id
     matn = format_results(user_id)
     await message.answer(matn, parse_mode="html")
-
-
-# @user_router.message(F.text == "kepataqoy")
-# async def start_cmd1(message: Message):
-#     user_id = message.from_user.id
-#     current_dir = os.path.dirname(os.path.abspath(__file__))
-#
-#     table_names = ["history", "literature", "math"]
-#     nn = 0
-#     for table in table_names:
-#         nn+=1
-#         cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL")
-#         result = cursor.fetchall()
-#
-#         for row in result:
-#
-#             row_id, photo_path = row
-#             full_path = os.path.join(current_dir, photo_path)
-#
-#             if not os.path.exists(full_path):
-#                 await message.answer(f"❌ Fayl topilmadi: {full_path}")
-#                 continue
-#
-#             with open(full_path, 'rb') as photo_file:
-#                 photo_bytes = photo_file.read()
-#
-#             telegram_file = BufferedInputFile(photo_bytes, filename=os.path.basename(full_path))
-#             sent_photo = await message.answer_photo(photo=telegram_file)
-#
-#             # file_id ni olish
-#             file_id = sent_photo.photo[-1].file_id
-#
-#             # file_id ni jadvalga yangilash
-#             cursor.execute(f"UPDATE {table} SET file_id = %s WHERE id = %s", (file_id, row_id))
-#             conn.commit()
-#             await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi.{nn}")
-#             await sent_photo.delete()
-#             time.sleep(0.1)
-#
-#     else:
-#         await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
