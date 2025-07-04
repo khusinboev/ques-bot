@@ -119,23 +119,27 @@ async def start_with_ref(message: Message, command: CommandObject):
 
 
 @user_router.message(F.text == "jallod")
-async def reset_all_referal_data(message: Message):
+async def give_ready_to_all(message: Message):
     if message.from_user.id not in ADMIN_ID:
-        return await message.answer("⛔ Siz bu buyruqni bajarishga ruxsatga ega emassiz.")
+        return await message.answer("⛔ Sizda bu amaliyotni bajarish uchun ruxsat yo'q.")
 
     try:
         sql.execute("""
-            UPDATE referal SET
+            UPDATE referal
+            SET
                 chance = FALSE,
                 member = 0,
-                ready = FALSE,
+                ready = TRUE,
                 starter = TRUE
         """)
         conn.commit()
-        await message.answer("✅ Barcha foydalanuvchilarning referal ma'lumotlari asl holatga qaytarildi.")
+        await message.answer("✅ Barcha foydalanuvchilarga test ishlash ruxsati (ready = TRUE) berildi.")
     except Exception as e:
         await message.answer("❌ Xatolik yuz berdi.")
-        await bot.send_message(chat_id=ADMIN_ID[0], text=f"[reset_all_referal_data] Error:\n{e}")
+        await bot.send_message(chat_id=ADMIN_ID[0], text=f"[give_ready_to_all] Error:\n{e}") 
+
+
+
 
 @user_router.message(F.text == "kepataqoy")
 async def update_images(message: Message):
