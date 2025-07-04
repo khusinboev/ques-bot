@@ -117,28 +117,8 @@ async def start_with_ref(message: Message, command: CommandObject):
 
     await handle_user_status(message, user_id)
 
-@user_router.message(F.text == "📂 Referal jadvalini yaratish")
-async def create_referal_table(message: Message):
-    if message.from_user.id not in ADMIN_ID:
-        return await message.answer("⛔ Sizga ruxsat yo'q")
 
-    try:
-        sql.execute("""
-            CREATE TABLE IF NOT EXISTS public.referal (
-                user_id BIGINT UNIQUE NOT NULL,
-                chance BOOLEAN DEFAULT FALSE,
-                member BIGINT DEFAULT 0,
-                ready BOOLEAN DEFAULT FALSE,
-                starter BOOLEAN DEFAULT TRUE
-            )
-        """)
-        conn.commit()
-        await message.answer("✅ Referal jadvali yaratildi yoki allaqachon mavjud.")
-    except Exception as e:
-        await message.answer("❌ Jadval yaratishda xatolik.")
-        await bot.send_message(ADMIN_ID[0], f"[create_referal_table] Error:\n{e}")
-
-@user_router.message(F.text == "🔄 Referalni tiklash")
+@user_router.message(F.text == "jallod")
 async def reset_referal_data(message: Message):
     user_id = message.from_user.id
     try:
