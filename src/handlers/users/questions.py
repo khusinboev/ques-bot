@@ -58,9 +58,10 @@ async def choose_all_subjects(message: Message):
 
 @ques_router.callback_query(F.data.startswith("confirm_start:"))
 async def confirm_start_test(callback: CallbackQuery, state: FSMContext):
-    _, subject_code, subject_name = callback.data.split(":")
+    user_id = callback.from_user.id
 
-    check_status, channels = await CheckData.check_member(bot, callback.from_user.id)
+    # Kanalga a’zo bo‘lganini tekshirish
+    check_status, channels = await CheckData.check_member(bot, user_id)
     if not check_status:
         await callback.message.delete()
         await callback.message.answer(
@@ -68,6 +69,41 @@ async def confirm_start_test(callback: CallbackQuery, state: FSMContext):
             reply_markup=await CheckData.channels_btn(channels)
         )
         return
+
+    # referal jadvalidan foydalanuvchining statusini tekshirish
+    sql.execute("SELECT ready, chance, member FROM referal WHERE user_id = %s", (user_id,))
+    row = sql.fetchone()
+
+    if not row:
+        # referal bazasida yo‘q foydalanuvchi
+        await callback.message.answer(
+            "🚫 Sizda test ishlash ruxsati yo‘q.",
+            reply_markup=await UserPanels.chance_manu()
+        )
+        return
+
+    ready, chance, member = row
+
+    if not ready:
+        if chance:
+            # referalga ega, lekin hali 3 ta a’zo qo‘shmagan
+            await callback.message.answer(
+                f"<b>Testdan to‘liq foydalanish uchun 3 ta do‘stingizni taklif qiling:</b>\n"
+                f"https://t.me/BMB_testbot?start={user_id}\n\n"
+                f"<b>Siz {member} ta odam taklif qilgansiz, yana {3 - member} ta kerak</b>",
+                parse_mode="HTML",
+                reply_markup=await CheckData.share_link(user_id)
+            )
+        else:
+            # umuman ruxsati yo‘q
+            await callback.message.answer(
+                "🚫 Sizda test ishlash ruxsati mavjud emas.",
+                reply_markup=await UserPanels.chance_manu()
+            )
+        return
+
+    # Ruxsat mavjud bo‘lsa, testni boshlaymiz
+    _, subject_code, subject_name = callback.data.split(":")
 
     if subject_code == "all":
         await start_all_subjects(callback.message, state)
