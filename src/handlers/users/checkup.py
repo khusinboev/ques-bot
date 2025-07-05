@@ -221,7 +221,7 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         result += f"\n\nUmumiy: {int((score + 0.01) // 1.1)} ta to‘g‘ri | {round(score, 1)} ball"
         result += f"\n⏳ {elapsed // 60} daqiqa {elapsed % 60} soniyada yakunlandi"
 
-        await callback.message.answer(result, reply_markup=await UserPanels.ques_manu())
+        await callback.message.answer(result, reply_markup=ReplyKeyboardRemove())
         try:
             await callback.message.delete()
         except:
