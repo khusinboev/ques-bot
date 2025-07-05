@@ -227,7 +227,6 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         except:
             pass
         await state.clear()
-        await callback.message.delete()
         await handle_user_status2(callback.message, callback.from_user.id)
 
 async def handle_user_status2(message_or_call, user_id, is_callback=False):
