@@ -121,18 +121,7 @@ async def start_with_ref(message: Message, command: CommandObject):
 @user_router.message(F.text == "jallod")
 async def reset_self_referal_data(message: Message):
     user_id = message.from_user.id
-    try:  
-        sql.execute("""  
-            UPDATE referal SET  
-                chance = FALSE,  
-                member = 0,  
-                ready = FALSE,  
-                starter = TRUE  
-        """)  
-        conn.commit()  
-        await message.answer("✅ Barcha foydalanuvchilarning referal ma'lumotlari asl holatga qaytarildi.")  
-    except Exception as e:  
-        await message.answer("❌ Xatolik yuz berdi.")
+    
 
     try:
         # referal jadvalidan tekshir
