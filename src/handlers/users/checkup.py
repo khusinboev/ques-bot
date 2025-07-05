@@ -187,7 +187,7 @@ async def force_finish(message_or_callback, state: FSMContext):
 
 @check_router.callback_query(F.data.startswith("1answer:"))
 async def handle_answer(callback: CallbackQuery, state: FSMContext):
-    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
+    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (callback.message.from_user.id,))
     if sql.fetchone():
         sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (callback.message.from_user.id,))
         db.commit()
