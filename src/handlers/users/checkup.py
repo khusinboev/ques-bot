@@ -39,15 +39,16 @@ async def show_start_buttons(message: Message):
 async def start_test_callback(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     check_status, channels = await CheckData.check_member(bot, user_id)
-    
     if not check_status:
-        try:
-            await callback.message.delete()
-        except:
-            pass
+        await callback.message.delete()
         await callback.message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
                                       reply_markup=await CheckData.channels_btn(channels))
         return
+
+    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
+    if sql.fetchone():
+        sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
+        db.commit()
 
     subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "O‘zbekiston tarixi")]
     selected_all = []
@@ -59,15 +60,12 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
         if not variants:
             await callback.message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
             return
-
         selected_v = random.choice([v[0] for v in variants])
         sql.execute(f"SELECT file_id, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
         questions = sql.fetchall()
-
         if len(questions) < 10:
             await callback.message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
             return
-
         sample = random.sample(questions, 10)
         selected_all.extend([(q[0], q[1], subject_name) for q in sample])
         stats[subject_name] = {'correct': 0, 'score': 0.0}
@@ -84,13 +82,9 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
         "subject_stats": stats,
         "start_time": start_time
     })
-
-    try:
-        await callback.message.delete()
-        await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
-    except Exception as e:
-        await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
-
+    await callback.message.delete()
+    await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
+    print(selected_all[0])
     await show_question(callback, selected_all[0], 0, 0.0, state)
 
 
@@ -134,6 +128,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
     )
 
     if isinstance(message_or_callback, Message):
+        # Foydalanuvchiga yangi savolni yuborish
         await message_or_callback.answer_photo(
             photo=photo,
             caption=caption,
@@ -152,18 +147,7 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
                 reply_markup=btn
             )
         except Exception as e:
-            print(f"[edit_media error]: {e}")
-            # Agar tahrirlab bo'lmasa — yangi rasm yuboriladi
-            try:
-                await bot.send_photo(
-                    chat_id=message_or_callback.from_user.id,
-                    photo=photo,
-                    caption=caption,
-                    reply_markup=btn,
-                    parse_mode="HTML"
-                )
-            except Exception as ex:
-                print(f"[send_photo fallback error]: {ex}")
+            print(f"[edit error] {e}")
         await message_or_callback.answer()
 
 
@@ -187,10 +171,6 @@ async def force_finish(message_or_callback, state: FSMContext):
 
 @check_router.callback_query(F.data.startswith("1answer:"))
 async def handle_answer(callback: CallbackQuery, state: FSMContext):
-    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (callback.message.from_user.id,))
-    if sql.fetchone():
-        sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (callback.message.from_user.id,))
-        db.commit()
     data = callback.data.split(":")
     is_correct = data[2]
     index = int(data[3])
@@ -302,4 +282,3 @@ async def stop_quiz(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.delete()
     await handle_user_status2(callback.message, callback.from_user.id)
- 
