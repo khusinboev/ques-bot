@@ -251,7 +251,7 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
             print("bera")
         except Exception as e:
             print(e)
-            await callback.message.answer(e)
+            await callback.message.answer(f"{e}"[:1020])
 
 async def handle_user_status2(message_or_call, user_id, is_callback=False):
     sql.execute("SELECT member, ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
