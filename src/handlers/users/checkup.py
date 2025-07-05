@@ -25,7 +25,7 @@ async def show_start_buttons(message: Message):
 async def start_checkup(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
 
-    # Kanalga a’zo bo‘lganini tekshir
+    # 1. Kanalga a'zo bo'lganligini tekshirish
     check_status, channels = await CheckData.check_member(bot, user_id)
     if not check_status:
         await callback.message.delete()
@@ -33,46 +33,53 @@ async def start_checkup(callback: CallbackQuery, state: FSMContext):
                                       reply_markup=await CheckData.channels_btn(channels))
         return
 
-    # referal statusni tekshiramiz
+    # 2. referal jadvalidan ma'lumot olish
     sql.execute("SELECT chance, ready, starter, member FROM referal WHERE user_id = %s", (user_id,))
     row = sql.fetchone()
 
     if not row:
-        # yangi foydalanuvchi — birinchi imkon
+        # Foydalanuvchi birinchi marta kirgan — jadvalga qo'shamiz
         sql.execute("""
             INSERT INTO referal (user_id, chance, ready, starter, member)
-            VALUES (%s, TRUE, FALSE, FALSE, 0)
+            VALUES (%s, FALSE, FALSE, TRUE, 0)
         """, (user_id,))
         db.commit()
-        await run_checkup_test(callback, state)
-        return
+        starter = True
+        chance = False
+        ready = False
+        member = 0
+    else:
+        chance, ready, starter, member = row
 
-    chance, ready, starter, member = row
-
-    if ready:
-        await callback.message.answer("✅ Sizda to‘liq test ishlash ruxsati bor.", reply_markup=await UserPanels.ques_manu())
-        return
-
+    # 3. Agar starter True bo‘lsa — 1-martalik testga ruxsat
     if starter:
-        # Foydalanuvchi hali birinchi testni ishlamagan bo‘lsa, ruxsat beriladi
         sql.execute("UPDATE referal SET starter = FALSE, chance = TRUE WHERE user_id = %s", (user_id,))
         db.commit()
         await run_checkup_test(callback, state)
         return
 
+    # 4. Agar member >= 3 bo‘lsa — to‘liq ruxsat beriladi
+    if member >= 3:
+        sql.execute("UPDATE referal SET ready = TRUE, chance = FALSE WHERE user_id = %s", (user_id,))
+        db.commit()
+        await callback.message.answer("✅ Sizga testlarni to‘liq ishlash imkoniyati taqdim etildi!",
+                                      reply_markup=await UserPanels.ques_manu())
+        return
+
+    # 5. Agar chance True, lekin ready hali emas — referal taklifi yuboriladi
     if chance and not ready:
-        # Taklif holati mavjud, lekin hali 3 ta do‘st chaqirmagan
         await callback.message.answer(
             f"<b>Testdan to‘liq foydalanish uchun 3 ta do‘stingizni taklif qiling:</b>\n"
             f"https://t.me/BMB_testbot?start={user_id}\n\n"
-            f"<i>3 ta do‘stdan keyin sizga to‘liq test ochiladi.</i>",
+            f"<i>Siz {member} ta do‘st taklif qilgansiz. Yana {3 - member} ta kerak.</i>",
             parse_mode="HTML",
             reply_markup=await CheckData.share_link(user_id)
         )
         return
 
-    # Umuman ruxsat yo‘q
-    await callback.message.answer("🚫 Sizda test ishlash imkoniyati yo‘q.", reply_markup=await UserPanels.chance_manu())
+    # 6. Hech qanday imkon yo‘q
+    await callback.message.answer("🚫 Sizda test ishlash ruxsati mavjud emas.",
+                                  reply_markup=await UserPanels.chance_manu())
 
 
 async def run_checkup_test(callback: CallbackQuery, state: FSMContext):
