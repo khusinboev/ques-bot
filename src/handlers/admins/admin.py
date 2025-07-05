@@ -264,7 +264,7 @@ async def channel_list(message: Message):
 
 
 
-@user_router.message(Command("deletemy"), F.chat.type == ChatType.PRIVATE)
+@admin_router.message(Command("deletemy"), F.chat.type == ChatType.PRIVATE)
 async def delete_my_data(message: Message):
     user_id = message.from_user.id
 
