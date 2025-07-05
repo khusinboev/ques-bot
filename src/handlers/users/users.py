@@ -119,36 +119,24 @@ async def start_with_ref(message: Message, command: CommandObject):
 
 
 @user_router.message(F.text == "jallod")
-async def reset_self_referal_data(message: Message):
-    user_id = message.from_user.id
-    
+async def give_ready_to_all(message: Message):
+    if message.from_user.id not in ADMIN_ID:
+        return await message.answer("⛔ Sizda bu amaliyotni bajarish uchun ruxsat yo'q.")
 
     try:
-        # referal jadvalidan tekshir
-        sql.execute("SELECT 1 FROM referal WHERE user_id = %s", (user_id,))
-        if sql.fetchone():
-            # mavjud bo‘lsa - update
-            sql.execute("""
-                UPDATE referal SET
-                    chance = FALSE,
-                    member = 0,
-                    ready = FALSE,
-                    starter = TRUE
-                WHERE user_id = %s
-            """, (user_id,))
-        else:
-            # mavjud bo‘lmasa - insert
-            sql.execute("""
-                INSERT INTO referal (user_id, chance, member, ready, starter)
-                VALUES (%s, FALSE, 0, FALSE, TRUE)
-            """, (user_id,))
-
+        sql.execute("""
+            UPDATE referal
+            SET
+                chance = FALSE,
+                member = 0,
+                ready = TRUE,
+                starter = TRUE
+        """)
         conn.commit()
-        await message.answer("🔄 Sizning test huquqingiz asl holatga qaytarildi.")
-
+        await message.answer("✅ Barcha foydalanuvchilarga test ishlash ruxsati (ready = TRUE) berildi.")
     except Exception as e:
         await message.answer("❌ Xatolik yuz berdi.")
-        await bot.send_message(chat_id=ADMIN_ID[0], text=f"[jallod handler] Error:\n{e}")
+        await bot.send_message(chat_id=ADMIN_ID[0], text=f"[give_ready_to_all] Error:\n{e}")
 
 
 
