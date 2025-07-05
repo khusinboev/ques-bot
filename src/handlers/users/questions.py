@@ -60,7 +60,7 @@ async def choose_all_subjects(message: Message):
 async def confirm_start_test(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
 
-    # Kanalga a’zo bo‘lganini tekshirish
+    # 1. Kanalga a'zolikni tekshirish
     check_status, channels = await CheckData.check_member(bot, user_id)
     if not check_status:
         await callback.message.delete()
@@ -70,45 +70,54 @@ async def confirm_start_test(callback: CallbackQuery, state: FSMContext):
         )
         return
 
-    # referal jadvalidan foydalanuvchining statusini tekshirish
-    sql.execute("SELECT ready, chance, member FROM referal WHERE user_id = %s", (user_id,))
+    # 2. referal holatini tekshirish (yo‘q bo‘lsa yaratamiz)
+    sql.execute("SELECT ready, chance, starter, member FROM referal WHERE user_id = %s", (user_id,))
     row = sql.fetchone()
 
     if not row:
-        # referal bazasida yo‘q foydalanuvchi
+        # Birinchi kirgan foydalanuvchi — 1 martalik testga ruxsat beriladi
+        sql.execute("""
+            INSERT INTO referal (user_id, ready, chance, starter, member)
+            VALUES (%s, FALSE, TRUE, TRUE, 0)
+        """, (user_id,))
+        db.commit()
+        ready = False
+        chance = True
+        starter = True
+        member = 0
+    else:
+        ready, chance, starter, member = row
+
+    # 3. STARTER bo‘lsa — 1 martalik test
+    if starter:
+        sql.execute("UPDATE referal SET starter = FALSE, chance = TRUE WHERE user_id = %s", (user_id,))
+        db.commit()
+        _, subject_code, subject_name = callback.data.split(":")
+        await callback.message.answer("🧪 Sizga 1 martalik test imkoniyati berildi!")
+        await start_subject(callback.message, state, subject_code, subject_name, duration=20 * 60)
+        return
+
+    # 4. CHANCE = TRUE va READY = FALSE bo‘lsa → referal taklif qilish
+    if chance and not ready:
         await callback.message.answer(
-            "🚫 Sizda test ishlash ruxsati yo‘q.",
-            reply_markup=await UserPanels.chance_manu()
+            f"<b>Testdan to‘liq foydalanish uchun 3 ta do‘stingizni taklif qiling:</b>\n"
+            f"https://t.me/BMB_testbot?start={user_id}\n\n"
+            f"<b>Siz {member} ta do‘st taklif qilgansiz, yana {max(0, 3 - member)} ta kerak.</b>",
+            parse_mode="HTML",
+            reply_markup=await CheckData.share_link(user_id)
         )
         return
 
-    ready, chance, member = row
-
-    if not ready:
-        if chance:
-            # referalga ega, lekin hali 3 ta a’zo qo‘shmagan
-            await callback.message.answer(
-                f"<b>Testdan to‘liq foydalanish uchun 3 ta do‘stingizni taklif qiling:</b>\n"
-                f"https://t.me/BMB_testbot?start={user_id}\n\n"
-                f"<b>Siz {member} ta odam taklif qilgansiz, yana {3 - member} ta kerak</b>",
-                parse_mode="HTML",
-                reply_markup=await CheckData.share_link(user_id)
-            )
+    # 5. READY = TRUE → to‘liq test ochiladi
+    if ready:
+        _, subject_code, subject_name = callback.data.split(":")
+        if subject_code == "all":
+            await callback.message.answer("✅ To‘liq test boshlandi (3 ta fan).")
+            await start_all_subjects(callback.message, state)
         else:
-            # umuman ruxsati yo‘q
-            await callback.message.answer(
-                "🚫 Sizda test ishlash ruxsati mavjud emas.",
-                reply_markup=await UserPanels.chance_manu()
-            )
+            await callback.message.answer(f"✅ {subject_name} fanidan test boshlandi.")
+            await start_subject(callback.message, state, subject_code, subject_name, duration=20 * 60)
         return
-
-    # Ruxsat mavjud bo‘lsa, testni boshlaymiz
-    _, subject_code, subject_name = callback.data.split(":")
-
-    if subject_code == "all":
-        await start_all_subjects(callback.message, state)
-    else:
-        await start_subject(callback.message, state, subject_code, subject_name, duration=20 * 60)
 
 
 @ques_router.callback_query(F.data == "back-to-menu")
