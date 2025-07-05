@@ -45,10 +45,7 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
                                       reply_markup=await CheckData.channels_btn(channels))
         return
 
-    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
-    if sql.fetchone():
-        sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
-        db.commit()
+    
 
     subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "O‘zbekiston tarixi")]
     selected_all = []
@@ -171,6 +168,10 @@ async def force_finish(message_or_callback, state: FSMContext):
 
 @check_router.callback_query(F.data.startswith("1answer:"))
 async def handle_answer(callback: CallbackQuery, state: FSMContext):
+    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
+    if sql.fetchone():
+        sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (callback.message.from_user.id,))
+        db.commit()
     data = callback.data.split(":")
     is_correct = data[2]
     index = int(data[3])
