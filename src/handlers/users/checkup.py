@@ -39,13 +39,15 @@ async def show_start_buttons(message: Message):
 async def start_test_callback(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     check_status, channels = await CheckData.check_member(bot, user_id)
+    
     if not check_status:
-        await callback.message.delete()
+        try:
+            await callback.message.delete()
+        except:
+            pass
         await callback.message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
                                       reply_markup=await CheckData.channels_btn(channels))
         return
-
-    
 
     subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "O‘zbekiston tarixi")]
     selected_all = []
@@ -57,12 +59,15 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
         if not variants:
             await callback.message.answer(f"{subject_name} fanida mavjud variant topilmadi.")
             return
+
         selected_v = random.choice([v[0] for v in variants])
         sql.execute(f"SELECT file_id, answer FROM {table_name} WHERE varyant=%s AND status='True'", (selected_v,))
         questions = sql.fetchall()
+
         if len(questions) < 10:
             await callback.message.answer(f"{subject_name} fanida {selected_v}-variantdan yetarli test yo'q.")
             return
+
         sample = random.sample(questions, 10)
         selected_all.extend([(q[0], q[1], subject_name) for q in sample])
         stats[subject_name] = {'correct': 0, 'score': 0.0}
@@ -79,9 +84,13 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
         "subject_stats": stats,
         "start_time": start_time
     })
-    await callback.message.delete()
-    await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
-    print(selected_all[0])
+
+    try:
+        await callback.message.delete()
+        await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
+    except Exception as e:
+        await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
+
     await show_question(callback, selected_all[0], 0, 0.0, state)
 
 
