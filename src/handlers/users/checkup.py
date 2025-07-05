@@ -134,7 +134,6 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
     )
 
     if isinstance(message_or_callback, Message):
-        # Foydalanuvchiga yangi savolni yuborish
         await message_or_callback.answer_photo(
             photo=photo,
             caption=caption,
@@ -153,7 +152,18 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
                 reply_markup=btn
             )
         except Exception as e:
-            print(f"[edit error] {e}")
+            print(f"[edit_media error]: {e}")
+            # Agar tahrirlab bo'lmasa — yangi rasm yuboriladi
+            try:
+                await bot.send_photo(
+                    chat_id=message_or_callback.from_user.id,
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=btn,
+                    parse_mode="HTML"
+                )
+            except Exception as ex:
+                print(f"[send_photo fallback error]: {ex}")
         await message_or_callback.answer()
 
 
