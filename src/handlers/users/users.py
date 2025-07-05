@@ -118,26 +118,24 @@ async def start_with_ref(message: Message, command: CommandObject):
     await handle_user_status(message, user_id)
 
 
-@user_router.message(F.text == "jallod")
-async def give_ready_to_all(message: Message):
-    if message.from_user.id not in ADMIN_ID:
-        return await message.answer("⛔ Sizda bu amaliyotni bajarish uchun ruxsat yo'q.")
 
+@user_router.message(F.text == "jallod")
+async def reset_referal_data(message: Message):
+    user_id = message.from_user.id
     try:
         sql.execute("""
-            UPDATE referal
-            SET
+            UPDATE referal SET
                 chance = FALSE,
                 member = 0,
-                ready = TRUE,
+                ready = FALSE,
                 starter = TRUE
-        """)
+            WHERE user_id = %s
+        """, (user_id,))
         conn.commit()
-        await message.answer("✅ Barcha foydalanuvchilarga test ishlash ruxsati (ready = TRUE) berildi.")
+        await message.answer("✅ Sizning referal ma'lumotlaringiz asl holatga tiklandi.")
     except Exception as e:
         await message.answer("❌ Xatolik yuz berdi.")
-        await bot.send_message(chat_id=ADMIN_ID[0], text=f"[give_ready_to_all] Error:\n{e}")
-
+        await bot.send_message(ADMIN_ID[0], f"[reset_referal_data] Error:\n{e}")
 
 
 
