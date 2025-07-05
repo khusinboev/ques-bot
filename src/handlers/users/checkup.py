@@ -128,7 +128,6 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
     )
 
     if isinstance(message_or_callback, Message):
-        # Foydalanuvchiga yangi savolni yuborish
         await message_or_callback.answer_photo(
             photo=photo,
             caption=caption,
@@ -147,8 +146,19 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
                 reply_markup=btn
             )
         except Exception as e:
-            print(f"[edit error] {e}")
-        await message_or_callback.answer()
+            print(f"[edit_media error] {e}")
+            # Agar edit bo‘lmasa yangi xabar yuboriladi
+            try:
+                await message_or_callback.message.answer_photo(
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=btn,
+                    parse_mode="HTML"
+                )
+            except Exception as ex:
+                print(f"[answer_photo fallback error] {ex}")
+        finally:
+            await message_or_callback.answer() 
 
 
 
