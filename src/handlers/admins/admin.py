@@ -13,7 +13,7 @@ from aiogram.fsm.state import StatesGroup, State
 from dateutil.relativedelta import relativedelta
 
 from src.keyboards.buttons import AdminPanel
-from config import sql, ADMIN_ID, DB_CONFIG, bot
+from config import sql, db, ADMIN_ID, DB_CONFIG, bot
 from src.keyboards.keyboard_func import PanelFunc, AdminFilter
 
 admin_router = Router()
