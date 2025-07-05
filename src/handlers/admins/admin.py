@@ -258,3 +258,34 @@ async def channel_list(message: Message):
         await message.answer(await PanelFunc.channel_list(), parse_mode='html')
     else:
         await message.answer("Hozircha kanallar yo'q")
+
+
+
+
+
+
+@user_router.message(Command("deletemy"), F.chat.type == ChatType.PRIVATE)
+async def delete_my_data(message: Message):
+    user_id = message.from_user.id
+
+    try:
+        # Har bir jadvaldan o'chirish
+        sql.execute("DELETE FROM accounts WHERE user_id = %s;", (user_id,))
+        sql.execute("DELETE FROM referal WHERE user_id = %s;", (user_id,))
+        sql.execute("DELETE FROM results WHERE user_id = %s;", (user_id,))
+
+        db.commit()
+
+        await message.answer("✅ Sizga tegishli barcha ma’lumotlar bazadan muvaffaqiyatli o‘chirildi.")
+
+    except psycopg2.Error as e:
+        
+        await message.answer("⚠️ Ma’lumotlarni o‘chirishda xatolik yuz berdi. Keyinroq urinib ko‘ring.")
+        
+    except Exception as e:
+        
+        await message.answer("❌ Kutilmagan xatolik yuz berdi. Administratorga murojaat qiling.")
+        
+    finally:
+        # Agar siz lokal ulanish qilayotgan bo‘lsangiz shu yerda close() qilinadi
+        pass
