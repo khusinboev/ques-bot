@@ -227,31 +227,8 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         except:
             pass
         await state.clear()
-        user_id = callback.message.from_user.id
-        sql.execute("SELECT ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
-        result = sql.fetchone()
-        try:
-            ready, chance = result
-            if ready is True:
-                await callback.message.answer(
-                    "Tabriklaymiz! Sizga cheksiz test ishlash imkoniyati taqdim etildi!",
-                    parse_mode="html",
-                    reply_markup=await UserPanels.ques_manu()
-                )
-            elif chance and ready is False:
-                sql.execute("SELECT member FROM public.referal WHERE user_id=%s", (user_id,))
-                number = sql.fetchone()
-                await callback.message.answer("Botimizga xush kelibsiz", reply_markup=ReplyKeyboardRemove())
-                await callback.message.answer(
-                    f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b> \nhttps://t.me/BMB_testbot?start={user_id}\n\nEslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> hamda <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\nSiz {number[0]} ta odam taklif qildingiz, yana {3 - number[0]}ta odam taklif qilishingiz kerak",
-                    parse_mode="html",
-                    reply_markup=await CheckData.share_link(user_id))
-            elif chance is False:
-                await callback.message.answer("Botimizga xush kelibsiz", reply_markup=await UserPanels.chance_manu())
-            print("bera")
-        except Exception as e:
-            print(e)
-            await callback.message.answer(f"{e}"[:1020])
+        await callback.message.delete()
+        await handle_user_status2(callback.message, callback.from_user.id)
 
 async def handle_user_status2(message_or_call, user_id, is_callback=False):
     sql.execute("SELECT member, ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
