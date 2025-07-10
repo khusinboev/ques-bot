@@ -142,23 +142,22 @@ async def reset_referal_data(message: Message):
 @user_router.message(F.text == "kepataqoy")
 async def update_images(message: Message):
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    tables = ["history", "literature", "math"]
-    for idx, table in enumerate(tables, 1):
-        cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id IS NULL")
-        for row_id, photo_path in cursor.fetchall():
-            full_path = os.path.join(current_dir, photo_path)
-            if not os.path.exists(full_path):
-                await message.answer(f"❌ Fayl topilmadi: {full_path}")
-                continue
-            with open(full_path, 'rb') as file:
-                telegram_file = BufferedInputFile(file.read(), filename=os.path.basename(full_path))
-            sent = await message.answer_photo(photo=telegram_file)
-            file_id = sent.photo[-1].file_id
-            cursor.execute(f"UPDATE {table} SET file_id = %s WHERE id = %s", (file_id, row_id))
-            conn.commit()
-            await message.answer(f"✅ {table} jadvalidan rasm yuborildi va yangilandi. {idx}")
-            await sent.delete()
-            await asyncio.sleep(0.1)
+
+    cursor.execute(f"SELECT id, photo FROM math WHERE file_id IS NULL")
+    for row_id, photo_path in cursor.fetchall():
+        full_path = os.path.join(current_dir, photo_path)
+        if not os.path.exists(full_path):
+            await message.answer(f"❌ Fayl topilmadi: {full_path}")
+            continue
+        with open(full_path, 'rb') as file:
+            telegram_file = BufferedInputFile(file.read(), filename=os.path.basename(full_path))
+        sent = await message.answer_photo(photo=telegram_file)
+        file_id = sent.photo[-1].file_id
+        cursor.execute(f"UPDATE math SET file_id = %s WHERE id = %s", (file_id, row_id))
+        conn.commit()
+        await message.answer(f"✅ math jadvalidan rasm yuborildi va yangilandi. {row_id}")
+        await sent.delete()
+        await asyncio.sleep(0.1)
     await message.answer("✅ Barcha jadvalidagi rasm fayllari allaqachon file_id bilan yangilangan.")
 
 @user_router.message(F.text == "📊Natijalarim")
