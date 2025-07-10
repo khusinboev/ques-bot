@@ -143,7 +143,7 @@ async def reset_referal_data(message: Message):
 async def update_images(message: Message):
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    cursor.execute(f"SELECT id, photo FROM math WHERE file_id IS NULL")
+    cursor.execute(f"SELECT id, photo FROM math WHERE file_id = '' ")
     for row_id, photo_path in cursor.fetchall():
         full_path = os.path.join(current_dir, photo_path)
         if not os.path.exists(full_path):
