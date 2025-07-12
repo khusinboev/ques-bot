@@ -144,7 +144,7 @@ async def update_images(message: Message):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     tables = ["history", "literature", "math"]
     for idx, table in enumerate(tables, 1):
-        cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id = '' ")
+        cursor.execute(f"SELECT id, photo FROM {table} WHERE file_id = '' OR file_id IS NULL ")
         for row_id, photo_path in cursor.fetchall():
             full_path = os.path.join(current_dir, photo_path)
             if not os.path.exists(full_path):
