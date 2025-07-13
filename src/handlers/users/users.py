@@ -76,7 +76,9 @@ async def check_channels(call: CallbackQuery):
     try:
         check_status, _ = await CheckData.check_member(bot, user_id)
         if check_status:
-            await call.message.delete()
+            try:
+                await call.message.delete()
+            except: pass
             await handle_user_status(call.message, user_id, is_callback=True)
         else:
             await call.answer(show_alert=True, text="Botimizdan foydalanish uchun barcha kanallarga a'zo bo'ling")
