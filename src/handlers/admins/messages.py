@@ -103,130 +103,160 @@ async def log_failed_user(user_id: int):
         await f.write(f"{user_id}\n")
 
 
-# === BROADCAST COPY YUBORISH === #
+# === BROADCAST COPY YUBORISH (YAXSHILANGAN) === #
 async def broadcast_copy(user_ids: list[int], message: Message) -> tuple[int, int]:
     success = 0
     failed = 0
-    status_msg = await message.answer("📤 Yuborish boshlandi...")
 
-    async def handle_user(user_id):
+    if os.path.exists(TEST_FAILED_COPY_FILE):
+        os.remove(TEST_FAILED_COPY_FILE)
+
+    status_msg = await message.answer("📤 Oddiy xabar yuborish boshlandi...")
+
+    async def send_and_log(user_id):
         nonlocal success, failed
-        result = await send_copy_safe(user_id, message)
-        if result:
-            success += 1
-        else:
-            failed += 1
-            await log_failed_user(user_id)
-        await asyncio.sleep(0.2)  # Har foydalanuvchidan keyin biroz kutish
+        for attempt in range(5):
+            try:
+                async with semaphore:
+                    await bot.copy_message(
+                        chat_id=user_id,
+                        from_chat_id=message.chat.id,
+                        message_id=message.message_id
+                    )
+                    success += 1
+                    break
+            except TelegramRetryAfter as e:
+                print(f"[⏳ RetryAfter] {user_id=} -> {e.retry_after}s")
+                await asyncio.sleep(e.retry_after)
+            except TelegramForbiddenError:
+                print(f"[🚫 Blocked] {user_id=}")
+                failed += 1
+                await log_test_failed_user(user_id, is_copy=True)
+                break
+            except TelegramNotFound:
+                print(f"[❌ Not Found] {user_id=}")
+                failed += 1
+                await log_test_failed_user(user_id, is_copy=True)
+                break
+            except TelegramBadRequest as e:
+                print(f"[⚠️ BadRequest] {user_id=}: {e}")
+                failed += 1
+                await log_test_failed_user(user_id, is_copy=True)
+                break
+            except TelegramAPIError as e:
+                print(f"[💥 API Error] {user_id=}: {e}")
+                if attempt == 4:
+                    failed += 1
+                    await log_test_failed_user(user_id, is_copy=True)
+                await asyncio.sleep(2)
+            except Exception as e:
+                print(f"[❗ Unknown Error] {user_id=}: {e}")
+                if attempt == 4:
+                    failed += 1
+                    await log_test_failed_user(user_id, is_copy=True)
+                await asyncio.sleep(2)
+        await asyncio.sleep(0.3)
 
-    tasks = [handle_user(uid) for uid in user_ids]
-
+    tasks = [send_and_log(uid) for uid in user_ids]
     for i in range(0, len(tasks), 50):
         await asyncio.gather(*tasks[i:i + 50])
         try:
             await status_msg.edit_text(
-                f"📬 Oddiy xabar yuborilmoqda...\n\n"
-                f"✅ Yuborilgan: {success} ta\n"
-                f"❌ Yuborilmagan: {failed} ta\n"
-                f"📦 Jami: {len(user_ids)} ta\n"
+                f"📬 Oddiy xabar yuborilmoqda...\n"
+                f"✅ Yuborilgan: {success}\n"
+                f"❌ Xato: {failed}\n"
+                f"📦 Jami: {len(user_ids)} foydalanuvchi\n"
                 f"📊 Progres: {min(i + 50, len(user_ids))}/{len(user_ids)}"
             )
         except Exception as e:
-            print(f"Holatni yangilashda xato: {e}")
+            print(f"⚠️ Holatni yangilashda xato: {e}")
+
+    # Faylni yuborish
+    if os.path.exists(TEST_FAILED_COPY_FILE):
+        async with aiofiles.open(TEST_FAILED_COPY_FILE, "rb") as f:
+            data = await f.read()
+            file = BufferedInputFile(data, TEST_FAILED_COPY_FILE)
+            await message.answer_document(file, caption="❌ Copy yuborishda xato bo‘lganlar")
 
     return success, failed
 
 
-# === BROADCAST FORWARD === #
+# === BROADCAST FORWARD YUBORISH (YAXSHILANGAN) === #
 async def broadcast_forward(user_ids: list[int], message: Message) -> tuple[int, int]:
     success = 0
     failed = 0
+
+    if os.path.exists(TEST_FAILED_FORWARD_FILE):
+        os.remove(TEST_FAILED_FORWARD_FILE)
+
     status_msg = await message.answer("📨 Forward yuborish boshlandi...")
 
-    async def handle_user(user_id):
+    async def send_and_log(user_id):
         nonlocal success, failed
-        result = await send_forward_safe(user_id, message)
-        if result:
-            success += 1
-        else:
-            failed += 1
-            await log_failed_user(user_id)
-        await asyncio.sleep(0.5)  # Har foydalanuvchidan keyin biroz kutish
+        for attempt in range(5):
+            try:
+                async with semaphore:
+                    await bot.forward_message(
+                        chat_id=user_id,
+                        from_chat_id=message.chat.id,
+                        message_id=message.message_id
+                    )
+                    success += 1
+                    break
+            except TelegramRetryAfter as e:
+                print(f"[⏳ RetryAfter] {user_id=} -> {e.retry_after}s")
+                await asyncio.sleep(e.retry_after)
+            except TelegramForbiddenError:
+                print(f"[🚫 Blocked] {user_id=}")
+                failed += 1
+                await log_test_failed_user(user_id, is_copy=False)
+                break
+            except TelegramNotFound:
+                print(f"[❌ Not Found] {user_id=}")
+                failed += 1
+                await log_test_failed_user(user_id, is_copy=False)
+                break
+            except TelegramBadRequest as e:
+                print(f"[⚠️ BadRequest] {user_id=}: {e}")
+                failed += 1
+                await log_test_failed_user(user_id, is_copy=False)
+                break
+            except TelegramAPIError as e:
+                print(f"[💥 API Error] {user_id=}: {e}")
+                if attempt == 4:
+                    failed += 1
+                    await log_test_failed_user(user_id, is_copy=False)
+                await asyncio.sleep(2)
+            except Exception as e:
+                print(f"[❗ Unknown Error] {user_id=}: {e}")
+                if attempt == 4:
+                    failed += 1
+                    await log_test_failed_user(user_id, is_copy=False)
+                await asyncio.sleep(2)
+        await asyncio.sleep(0.6)
 
-    tasks = [handle_user(uid) for uid in user_ids]
-
+    tasks = [send_and_log(uid) for uid in user_ids]
     for i in range(0, len(tasks), 50):
         await asyncio.gather(*tasks[i:i + 50])
         try:
             await status_msg.edit_text(
-                f"📨 Forward yuborilmoqda...\n\n"
-                f"✅ Yuborilgan: {success} ta\n"
-                f"❌ Yuborilmagan: {failed} ta\n"
-                f"📦 Jami: {len(user_ids)} ta\n"
+                f"📨 Forward yuborilmoqda...\n"
+                f"✅ Yuborilgan: {success}\n"
+                f"❌ Xatolik: {failed}\n"
+                f"📦 Jami: {len(user_ids)} foydalanuvchi\n"
                 f"📊 Progres: {min(i + 50, len(user_ids))}/{len(user_ids)}"
             )
         except Exception as e:
-            print(f"Holatni yangilashda xato: {e}")
+            print(f"⚠️ Holatni yangilashda xato: {e}")
+
+    # Faylni yuborish
+    if os.path.exists(TEST_FAILED_FORWARD_FILE):
+        async with aiofiles.open(TEST_FAILED_FORWARD_FILE, "rb") as f:
+            data = await f.read()
+            file = BufferedInputFile(data, TEST_FAILED_FORWARD_FILE)
+            await message.answer_document(file, caption="❌ Forward yuborishda xato bo‘lganlar")
 
     return success, failed
-
-
-# === FORWARD XAVFSIZ YUBORISH === #
-async def send_forward_safe(user_id: int, message: Message, retries=5) -> int:
-    for attempt in range(retries):
-        try:
-            async with semaphore:
-                await bot.forward_message(
-                    chat_id=user_id,
-                    from_chat_id=message.chat.id,
-                    message_id=message.message_id
-                )
-                return 1
-        except TelegramRetryAfter as e:
-            wait_time = e.retry_after
-            print(f"⏳ Flood control (forward): Waiting {wait_time}s for user_id={user_id}")
-            await asyncio.sleep(wait_time)
-        except (TelegramForbiddenError, TelegramNotFound, TelegramBadRequest, TelegramAPIError):
-            return 0
-        except Exception as e:
-            print(f"❌ Forward error user_id={user_id} (attempt {attempt + 1}): {e}")
-            await asyncio.sleep(2)
-    return 0
-
-
-# === COPY XAVFSIZ YUBORISH === #
-async def send_copy_safe(user_id: int, message: Message, retries=5) -> int:
-    for attempt in range(retries):
-        try:
-            async with semaphore:
-                await bot.copy_message(
-                    chat_id=user_id,
-                    from_chat_id=message.chat.id,
-                    message_id=message.message_id
-                )
-                return 1
-        except TelegramRetryAfter as e:
-            wait_time = e.retry_after
-            print(f"⏳ Flood control (copy): Waiting {wait_time}s for user_id={user_id}")
-            await asyncio.sleep(wait_time)
-        except (TelegramForbiddenError, TelegramNotFound):
-            # Bloklagan yoki mavjud emas
-            return 0
-        except (TelegramBadRequest, TelegramAPIError) as e:
-            # Ba'zi xatolarni qayta urinib ko'rish mumkin
-            if attempt == retries - 1:
-                print(f"❌ API Error: {e} user_id={user_id}")
-                await log_test_failed_user(user_id, str(e), is_copy=True)
-                return 0
-            await asyncio.sleep(2)
-        except Exception as e:
-            print(f"❌ Unknown Error user_id={user_id} (attempt {attempt + 1}): {e}")
-            if attempt == retries - 1:
-                await log_test_failed_user(user_id, str(e), is_copy=True)
-                return 0
-            await asyncio.sleep(2)
-    return 0
-
 
 
 TEST_FAILED_COPY_FILE = "test_failed_copy.txt"
