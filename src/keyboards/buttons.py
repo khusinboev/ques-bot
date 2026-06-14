@@ -18,7 +18,8 @@ class AdminPanel:
                             KeyboardButton(text="✍Xabarlar")
                         ],
                         [
-                            KeyboardButton(text="📊Referallar")
+                            KeyboardButton(text="📊Referallar"),
+                            KeyboardButton(text="🔄 Referal tizimi"),
                         ]
                     ],
                     resize_keyboard=True,

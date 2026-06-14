@@ -15,6 +15,8 @@ from dateutil.relativedelta import relativedelta
 from src.keyboards.buttons import AdminPanel
 from config import sql, db, ADMIN_ID, DB_CONFIG, bot
 from src.keyboards.keyboard_func import PanelFunc, AdminFilter
+from src.db.db_function import get_referral_threshold, set_referral_threshold
+
 
 admin_router = Router()
 
@@ -44,41 +46,48 @@ async def backs(message: Message, state: FSMContext):
 
 # Statistika
 @admin_router.message(F.text == "📊Referallar", F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))
-async def new(message: Message):
+async def referallar_handler(message: Message):
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
     cur.execute("SELECT SUM(member) FROM referal;")
-    total_members = cur.fetchone()[0]
-    await message.answer(f"Botga referallar orqali <b>{total_members}</b> ta odam qo'shilgan", parse_mode="HTML")
+    total_members = cur.fetchone()[0] or 0
+    cur.execute("SELECT COUNT(*) FROM referal WHERE ready = TRUE;")
+    ready_count = cur.fetchone()[0] or 0
+    cur.execute("SELECT COUNT(*) FROM referal WHERE chance = TRUE AND ready = FALSE;")
+    chance_count = cur.fetchone()[0] or 0
     cur.close()
     conn.close()
+
+    threshold = get_referral_threshold()
+    status = "✅ Yoniq (limit: 3)" if threshold != 0 else "❌ O'chiq (hamma ruxsat)"
+
+    await message.answer(
+        f"📊 <b>Referal statistikasi:</b>\n\n"
+        f"👥 Referallar orqali qo'shilganlar: <b>{total_members}</b> ta\n"
+        f"✅ To'liq ruxsatlilar (ready): <b>{ready_count}</b> ta\n"
+        f"⏳ Bir testdan foydalanganlar: <b>{chance_count}</b> ta\n\n"
+        f"🔄 Referal tizimi: <b>{status}</b>\n"
+        f"<i>O'zgartirish uchun: 🔄 Referal tizimi tugmasini bosing</i>",
+        parse_mode="HTML"
+    )
 
 
 # refset
-@admin_router.message(Command("refset"), F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))
-async def refset_handler(message: Message):
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
+@admin_router.message(F.text == "🔄 Referal tizimi", F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))
+async def referal_toggle_handler(message: Message):
+    current = get_referral_threshold()
+    new_value = 0 if current != 0 else 3
+    set_referral_threshold(new_value)
 
-    cur.execute("SELECT value FROM config WHERE key = 'referral_threshold';")
-    row = cur.fetchone()
-    current = int(row[0]) if row else 3
+    if new_value == 0:
+        status = "❌ O'chirildi — barcha foydalanuvchilar cheklovsiz foydalana oladi"
+    else:
+        status = "✅ Yoqildi — referal tizimi faol (limit: 3 ta taklif)"
 
-    new_value = 0 if current == 3 else 3
-
-    cur.execute(
-        "INSERT INTO config (key, value) VALUES ('referral_threshold', %s) "
-        "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;",
-        (str(new_value),)
+    await message.answer(
+        f"🔄 <b>Referal tizimi holati o'zgartirildi</b>\n\n{status}",
+        parse_mode="HTML"
     )
-    conn.commit()
-
-    cur.close()
-    conn.close()
-
-    status = "✅ Yoqildi (limit: 3)" if new_value == 3 else "❌ O'chirildi (limit: 0)"
-    await message.answer(f"Referal talabi: <b>{status}</b>", parse_mode="HTML")
-
 
 # Statistika
 @admin_router.message(F.text == "📊Statistika", F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))

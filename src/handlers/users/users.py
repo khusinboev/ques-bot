@@ -11,6 +11,7 @@ from config import sql, bot, ADMIN_ID, cursor, conn, dp
 from src.handlers.users.functions import format_results
 from src.keyboards.buttons import UserPanels
 from src.keyboards.keyboard_func import CheckData
+from src.db.db_function import get_referral_threshold
 
 user_router = Router()
 
@@ -33,15 +34,29 @@ async def ensure_user_in_referal(user_id: int):
 async def handle_user_status(message_or_call, user_id, is_callback=False):
     await ensure_user_in_referal(user_id)
 
+    threshold = get_referral_threshold()
+
+    # Referal o'chiq — hamma to'liq menyu oladi
+    if threshold == 0:
+        await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
+        await message_or_call.answer(
+            "<b>Kerakli bo'limni tanlang👇</b>",
+            parse_mode="HTML",
+            reply_markup=await UserPanels.ques_manu()
+        )
+        return
+
+    # Referal yoniq — hozirgi logika
     sql.execute("SELECT member, ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
     result = sql.fetchone()
     if not result:
         return
 
     member, ready, chance = result
-    if member >= 3:
+    if member >= threshold:
         cursor.execute("UPDATE referal SET ready=TRUE WHERE user_id = %s", (user_id,))
         conn.commit()
+        ready = True
 
     cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))
     is_start = cursor.fetchone()[0]
@@ -51,20 +66,28 @@ async def handle_user_status(message_or_call, user_id, is_callback=False):
 
     if ready:
         await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
-        await message_or_call.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
-                                     reply_markup=await UserPanels.ques_manu())
+        await message_or_call.answer(
+            "<b>Kerakli bo'limni tanlang👇</b>",
+            parse_mode="HTML",
+            reply_markup=await UserPanels.ques_manu()
+        )
     elif chance:
         await message_or_call.answer(
-            f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b>\n"
+            f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali {threshold} ta do'stingizni taklif qiling:</b>\n"
             f"https://t.me/BMB_testbot?start={user_id}\n\n"
-            f"Eslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> va <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\n"
-            f"Siz {member} ta odam taklif qildingiz, yana {3 - member} ta odam taklif qilishingiz kerak",
+            f"Eslatma: {threshold} ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> va <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\n"
+            f"Siz {member} ta odam taklif qildingiz, yana {threshold - member} ta odam taklif qilishingiz kerak",
             parse_mode="HTML",
-            reply_markup=await CheckData.share_link(user_id))
+            reply_markup=await CheckData.share_link(user_id)
+        )
     else:
         await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
-        await message_or_call.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
-                                     reply_markup=await UserPanels.chance_manu())
+        await message_or_call.answer(
+            "<b>Kerakli bo'limni tanlang👇</b>",
+            parse_mode="HTML",
+            reply_markup=await UserPanels.chance_manu()
+        )
+
 
 @user_router.message(CommandStart())
 async def start_command(message: Message):
@@ -106,7 +129,8 @@ async def start_with_ref(message: Message, command: CommandObject):
         conn.commit()
 
         cursor.execute("SELECT member FROM referal WHERE user_id = %s", (referal_id,))
-        if cursor.fetchone()[0] >= 3:
+        threshold = get_referral_threshold()
+        if cursor.fetchone()[0] >= threshold:
             cursor.execute("UPDATE referal SET ready = TRUE WHERE user_id = %s", (referal_id,))
             conn.commit()
             try:
@@ -118,8 +142,6 @@ async def start_with_ref(message: Message, command: CommandObject):
                 pass
 
     await handle_user_status(message, user_id)
-
-
 
 @user_router.message(F.text == "jallod")
 async def reset_referal_data(message: Message):
@@ -138,8 +160,6 @@ async def reset_referal_data(message: Message):
     except Exception as e:
         await message.answer("❌ Xatolik yuz berdi.")
         await bot.send_message(ADMIN_ID[0], f"[reset_referal_data] Error:\n{e}")
-
-
 
 @user_router.message(F.text == "kepataqoy")
 async def update_images(message: Message):

@@ -41,3 +41,22 @@ async def cinema_delete(cinema_id: int) -> bool:
         db.rollback()
         print(f"Xatolik yuz berdi: {e}")
         return False
+
+
+def get_referral_threshold() -> int:
+    """0 = o'chiq (hamma ruxsat), 3 = yoniq (referal talab qilinadi)"""
+    try:
+        sql.execute("SELECT value FROM public.config WHERE key = 'referral_threshold'")
+        row = sql.fetchone()
+        return int(row[0]) if row else 3
+    except Exception:
+        return 3
+
+
+def set_referral_threshold(value: int) -> None:
+    sql.execute(
+        "INSERT INTO public.config (key, value) VALUES ('referral_threshold', %s) "
+        "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        (str(value),)
+    )
+    db.commit()

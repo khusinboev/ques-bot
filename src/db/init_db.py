@@ -78,6 +78,19 @@ async def create_all_base():
 """)
     db.commit()
 
+    sql.execute("""
+        CREATE TABLE IF NOT EXISTS public.config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
+    db.commit()
+    sql.execute("""
+        INSERT INTO public.config (key, value) VALUES ('referral_threshold', '3')
+        ON CONFLICT (key) DO NOTHING
+    """)
+    db.commit()
+
 
 class Authenticator:
     @staticmethod

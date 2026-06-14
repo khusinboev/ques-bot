@@ -15,6 +15,7 @@ from src.handlers.users.questions import insert_result
 from src.handlers.users.users import WELCOME_TEXT
 from src.keyboards.buttons import UserPanels
 from src.keyboards.keyboard_func import CheckData
+from src.db.db_function import get_referral_threshold
 
 check_router = Router()
 
@@ -41,14 +42,18 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
     check_status, channels = await CheckData.check_member(bot, user_id)
     if not check_status:
         await callback.message.delete()
-        await callback.message.answer("❗ Iltimos, quyidagi kanallarga a’zo bo‘ling:",
-                                      reply_markup=await CheckData.channels_btn(channels))
+        await callback.message.answer(
+            "❗ Iltimos, quyidagi kanallarga a'zo bo'ling:",
+            reply_markup=await CheckData.channels_btn(channels)
+        )
         return
 
-    sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
-    if sql.fetchone():
-        sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
-        db.commit()
+    threshold = get_referral_threshold()
+    if threshold != 0:
+        sql.execute("SELECT 1 FROM referal WHERE user_id = %s;", (user_id,))
+        if sql.fetchone():
+            sql.execute("UPDATE referal SET chance = TRUE WHERE user_id = %s;", (user_id,))
+            db.commit()
 
     subjects = [("literature", "Ona tili"), ("math", "Matematika"), ("history", "O‘zbekiston tarixi")]
     selected_all = []
@@ -86,8 +91,6 @@ async def start_test_callback(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer("📚 3 ta fandan umumiy test boshlandi", reply_markup=ReplyKeyboardRemove())
     print(selected_all[0])
     await show_question(callback, selected_all[0], 0, 0.0, state)
-
-
 
 async def show_question(message_or_callback, question, index, score, state: FSMContext):
     data = await state.get_data()
@@ -160,8 +163,6 @@ async def show_question(message_or_callback, question, index, score, state: FSMC
         finally:
             await message_or_callback.answer() 
 
-
-
 async def force_finish(message_or_callback, state: FSMContext):
     data = await state.get_data()
     score = data.get("score", 0.0)
@@ -177,7 +178,6 @@ async def force_finish(message_or_callback, state: FSMContext):
 
     await message_or_callback.answer(result, reply_markup=await UserPanels.ques_manu())
     await state.clear()
-
 
 @check_router.callback_query(F.data.startswith("1answer:"))
 async def handle_answer(callback: CallbackQuery, state: FSMContext):
@@ -230,15 +230,27 @@ async def handle_answer(callback: CallbackQuery, state: FSMContext):
         await handle_user_status2(callback.message, callback.from_user.id)
 
 async def handle_user_status2(message_or_call, user_id, is_callback=False):
+    threshold = get_referral_threshold()
+
+    # Referal o'chiq — to'g'ridan to'g'ri to'liq menyu
+    if threshold == 0:
+        await message_or_call.answer(
+            "<b>Kerakli bo'limni tanlang👇</b>",
+            parse_mode="HTML",
+            reply_markup=await UserPanels.ques_manu()
+        )
+        return
+
     sql.execute("SELECT member, ready, chance FROM public.referal WHERE user_id=%s", (user_id,))
     result = sql.fetchone()
     if not result:
         return
 
     member, ready, chance = result
-    if member >= 3:
+    if member >= threshold:
         cursor.execute("UPDATE referal SET ready=TRUE WHERE user_id = %s", (user_id,))
         conn.commit()
+        ready = True
 
     cursor.execute("SELECT starter FROM referal WHERE user_id = %s", (user_id,))
     is_start = cursor.fetchone()[0]
@@ -248,20 +260,26 @@ async def handle_user_status2(message_or_call, user_id, is_callback=False):
 
     if ready:
         await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
-        await message_or_call.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
-                                     reply_markup=await UserPanels.ques_manu())
+        await message_or_call.answer(
+            "<b>Kerakli bo'limni tanlang👇</b>",
+            parse_mode="HTML",
+            reply_markup=await UserPanels.ques_manu()
+        )
     elif chance:
         await message_or_call.answer(
-            f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali 3 ta do'stingizni taklif qiling:</b>\n"
+            f"<b>Siz yana test ishlamoqchi bo'lsangiz quyidagi havola oraqali {threshold} ta do'stingizni taklif qiling:</b>\n"
             f"https://t.me/BMB_testbot?start={user_id}\n\n"
-            f"Eslatma: 3 ta do'stingizni taklif qilgandan so'ng, sizga <b>cheksiz test ishlash</b> va <b>har bir fanda alohida</b> test ishlash imkoniyati taqdim etiladi.\n\n"
-            f"Siz {member} ta odam taklif qildingiz, yana {3 - member} ta odam taklif qilishingiz kerak",
+            f"Siz {member} ta odam taklif qildingiz, yana {threshold - member} ta odam taklif qilishingiz kerak",
             parse_mode="HTML",
-            reply_markup=await CheckData.share_link(user_id))
+            reply_markup=await CheckData.share_link(user_id)
+        )
     else:
         await message_or_call.answer(WELCOME_TEXT, parse_mode="HTML")
-        await message_or_call.answer("<b>Kerakli bo'limni tanlang👇</b>", parse_mode="HTML",
-                                     reply_markup=await UserPanels.chance_manu())
+        await message_or_call.answer(
+            "<b>Kerakli bo'limni tanlang👇</b>",
+            parse_mode="HTML",
+            reply_markup=await UserPanels.chance_manu()
+        )
 
 @check_router.callback_query(F.data == "stop-checkup")
 async def stop_quiz(callback: CallbackQuery, state: FSMContext):
