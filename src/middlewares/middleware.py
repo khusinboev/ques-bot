@@ -36,6 +36,16 @@ class RegisterUserMiddleware(BaseMiddleware):
             cur.execute("INSERT INTO public.referal (user_id, chance, starter) VALUES (%s, %s, %s)", (user_id, False, True))
             conn.commit()
 
+        cur.execute("""
+                CREATE TABLE IF NOT EXISTS config (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+                INSERT INTO config (key, value) VALUES ('referral_threshold', '3')
+                ON CONFLICT (key) DO NOTHING;
+                """)
+        conn.commit()
+
         cur.close()
         conn.close()
 

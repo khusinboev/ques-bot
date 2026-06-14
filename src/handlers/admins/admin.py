@@ -54,6 +54,32 @@ async def new(message: Message):
     conn.close()
 
 
+# refset
+@admin_router.message(Command("refset"), F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))
+async def refset_handler(message: Message):
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+
+    cur.execute("SELECT value FROM config WHERE key = 'referral_threshold';")
+    row = cur.fetchone()
+    current = int(row[0]) if row else 3
+
+    new_value = 0 if current == 3 else 3
+
+    cur.execute(
+        "INSERT INTO config (key, value) VALUES ('referral_threshold', %s) "
+        "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;",
+        (str(new_value),)
+    )
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    status = "✅ Yoqildi (limit: 3)" if new_value == 3 else "❌ O'chirildi (limit: 0)"
+    await message.answer(f"Referal talabi: <b>{status}</b>", parse_mode="HTML")
+
+
 # Statistika
 @admin_router.message(F.text == "📊Statistika", F.chat.type == ChatType.PRIVATE, AdminFilter(static_admins=ADMIN_ID))
 async def new(message: Message):
