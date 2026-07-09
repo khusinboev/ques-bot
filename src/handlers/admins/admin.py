@@ -55,17 +55,36 @@ async def referallar_handler(message: Message):
     ready_count = cur.fetchone()[0] or 0
     cur.execute("SELECT COUNT(*) FROM referal WHERE chance = TRUE AND ready = FALSE;")
     chance_count = cur.fetchone()[0] or 0
+
+    cur.execute("SELECT user_id FROM public.admins;")
+    admin_ids = sorted({int(row[0]) for row in cur.fetchall()} | set(ADMIN_ID))
+
+    cur.execute(
+        "SELECT user_id, member FROM referal WHERE user_id = ANY(%s);",
+        (admin_ids,)
+    )
+    admin_members = dict(cur.fetchall())
     cur.close()
     conn.close()
 
     threshold = get_referral_threshold()
     status = "✅ Yoniq (limit: 3)" if threshold != 0 else "❌ O'chiq (hamma ruxsat)"
 
+    admin_lines = ""
+    for admin_id in sorted(admin_ids, key=lambda a: admin_members.get(a, 0), reverse=True):
+        try:
+            chat = await bot.get_chat(admin_id)
+            name = chat.full_name
+        except AiogramError:
+            name = str(admin_id)
+        admin_lines += f"• {name} (<code>{admin_id}</code>): <b>{admin_members.get(admin_id, 0)}</b> ta\n"
+
     await message.answer(
         f"📊 <b>Referal statistikasi:</b>\n\n"
         f"👥 Referallar orqali qo'shilganlar: <b>{total_members}</b> ta\n"
         f"✅ To'liq ruxsatlilar (ready): <b>{ready_count}</b> ta\n"
         f"⏳ Bir testdan foydalanganlar: <b>{chance_count}</b> ta\n\n"
+        f"👨‍💻 <b>Adminlar bo'yicha referallar:</b>\n{admin_lines}\n"
         f"🔄 Referal tizimi: <b>{status}</b>\n"
         f"<i>O'zgartirish uchun: 🔄 Referal tizimi tugmasini bosing</i>",
         parse_mode="HTML"
