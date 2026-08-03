@@ -18,11 +18,11 @@ user_router = Router()
 WELCOME_TEXT = (
     "<b>Assalomu alaykum! Botimizga xush kelibsiz!</b>\n\n"
     "Ushbu bot orqali oliy taʼlim muassasalariga <b>kirish va oʻqishni koʻchirish</b> imtihonlariga Bilimni baholash agentligi standartlariga muvofiq <b>majburiy fanlardan tayyorgarlik</b> koʻrishingiz mumkin.\n\n"
-    "@BMB_testbot orqali siz:\n"
+    "<b>@BMB_testbot orqali siz:</b>\n"
     "✅ Majburiy fanlardagi bilim va koʻnikmalaringizni oshirishingiz;\n"
     "✅ Kirish va oʻqishni koʻchirish imtihonlariga sifatli tayyorgarlik koʻrishingiz;\n"
     "✅ Bilimingizni objektiv baholash imkoniyatiga ega boʻlishingiz mumkin.\n\n"
-    "🎲 Doʻstlaringizga ham ulashing – abituriyentlar uchun foydali boʻladi!"
+    "<b>♻️ Doʻstlaringizga ham ulashing – abituriyentlar uchun foydali boʻladi!</b>"
 )
 
 async def ensure_user_in_referal(user_id: int):
